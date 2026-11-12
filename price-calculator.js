@@ -19,8 +19,12 @@
    *      tagline "TODO"      -> tagline is hidden
    *      coloursUrl "TODO"   -> the "Explore the full range" link is hidden
    *      pricePerM2 "TODO"   -> that range is hidden from customers
-   *      textureUrl / thumbUrl "TODO" -> the copy in this repo's /textures is used
-   *      bookingUrl / carpetPageUrl "TODO" -> that button/link is hidden
+   *      textureUrl / thumbUrl / nimbusUrl "TODO" -> the copy in this repo's
+   *                          /upload-to-wordpress folder is used
+   *      bookingUrl / browseUrl "TODO" -> that button/link is hidden
+   *  - Images: on mydreamflooring.co.uk the live (media library) URL is used;
+   *    if it fails to load, the repo copy is used instead. Elsewhere (GitHub
+   *    Pages, testing) the repo copy is used.
    *  - All prices are £ per square metre, SUPPLY ONLY (no fitting).
    * ========================================================================= */
   const MDF_CONFIG = {
@@ -55,23 +59,30 @@
 
     // Nimbus, the guide character. nimbusUrl / nimbusUrl2x are the images in
     // the WordPress media library (live site); local / local2x are the copies
-    // in this repo, used elsewhere and while the URLs are TODO.
+    // in this repo, used elsewhere or if a live image fails to load.
     nimbus: {
-      wave: { nimbusUrl: "TODO", nimbusUrl2x: "TODO", local: "images/nimbus-wave.webp", local2x: "images/nimbus-wave@2x.webp" },
-      think: { nimbusUrl: "TODO", nimbusUrl2x: "TODO", local: "images/nimbus-think.webp", local2x: "images/nimbus-think@2x.webp" },
-      point: { nimbusUrl: "TODO", nimbusUrl2x: "TODO", local: "images/nimbus-point.webp", local2x: "images/nimbus-point@2x.webp" },
-      celebrate: { nimbusUrl: "TODO", nimbusUrl2x: "TODO", local: "images/nimbus-celebrate.webp", local2x: "images/nimbus-celebrate@2x.webp" }
+      wave: {
+        nimbusUrl: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-nimbus-wave.webp", nimbusUrl2x: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-nimbus-wave-2x.webp",
+        local: "upload-to-wordpress/mdfc-nimbus-wave.webp", local2x: "upload-to-wordpress/mdfc-nimbus-wave-2x.webp" },
+      think: {
+        nimbusUrl: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-nimbus-think.webp", nimbusUrl2x: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-nimbus-think-2x.webp",
+        local: "upload-to-wordpress/mdfc-nimbus-think.webp", local2x: "upload-to-wordpress/mdfc-nimbus-think-2x.webp" },
+      point: {
+        nimbusUrl: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-nimbus-point.webp", nimbusUrl2x: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-nimbus-point-2x.webp",
+        local: "upload-to-wordpress/mdfc-nimbus-point.webp", local2x: "upload-to-wordpress/mdfc-nimbus-point-2x.webp" },
+      celebrate: {
+        nimbusUrl: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-nimbus-celebrate.webp", nimbusUrl2x: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-nimbus-celebrate-2x.webp",
+        local: "upload-to-wordpress/mdfc-nimbus-celebrate.webp", local2x: "upload-to-wordpress/mdfc-nimbus-celebrate-2x.webp" }
     },
 
     // Finance claims. Shown as a strip at the top and as chips in the price
     // bar. Use [] to hide both.
     financeBadge: ["0% interest", "No credit checks"],
 
-    // Where the "Book my free home visit" button goes.
-    bookingUrl: "https://mydreamflooring.co.uk",
-
-    // Where "Browse every carpet and colour" goes (opens in a new tab).
-    carpetPageUrl: "TODO",
+    // Where the "Book my free home visit" button goes. "#something" scrolls to
+    // the element with that CSS ID on the same page (the inline booking form);
+    // a full web address opens that page instead.
+    bookingUrl: "#mdfc-booking",
 
     // Most rooms a customer can add.
     maxRooms: 10,
@@ -89,49 +100,61 @@
     //   textureUrl    – seamless tile in the WordPress media library (live site)
     //   thumbUrl      – 160px swatch in the WordPress media library (live site)
     //   textureLocal / thumbLocal – the same files in this repo (used on GitHub
-    //                   Pages, and on the live site while the URLs are TODO)
+    //                   Pages, and on the live site if a live image fails)
     //   tileSize      – real size in metres that one texture tile covers [across, along]
     //   planks        – laminate only: real plank size in metres [width, length]
     //   previewColour – floor colour in the 3D preview when there's no texture
     products: {
       carpet: {
         label: "Carpet",
+        browseUrl: "https://mydreamflooring.co.uk/carpets/",
+        browseLabel: "Browse every carpet and colour",
         includedNote: "10mm underlay, gripper and door bars included on all carpets.",
         ranges: [
           { id: "westminster", name: "Westminster", tagline: "Hard-wearing Saxony", shownAs: "Mid Grey", pricePerM2: 29,
             coloursUrl: "https://mydreamflooring.co.uk/carpets/?e-filter-101e477-flooring_tier=classic",
-            textureUrl: "TODO", thumbUrl: "TODO",
-            textureLocal: "textures/westminster.jpg", thumbLocal: "textures/westminster-thumb.jpg", tileSize: [0.25, 0.25] },
+            textureUrl: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-westminster.jpg",
+            thumbUrl: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-westminster-thumb.jpg",
+            textureLocal: "upload-to-wordpress/mdfc-westminster.jpg", thumbLocal: "upload-to-wordpress/mdfc-westminster-thumb.jpg", tileSize: [0.25, 0.25] },
           { id: "buckingham", name: "Buckingham", tagline: "Tufted cut pile, thick and cosy underfoot", shownAs: "Mist", pricePerM2: 35,
             coloursUrl: "https://mydreamflooring.co.uk/carpets/?e-filter-101e477-flooring_tier=luxury",
-            textureUrl: "TODO", thumbUrl: "TODO",
-            textureLocal: "textures/buckingham.jpg", thumbLocal: "textures/buckingham-thumb.jpg", tileSize: [0.3, 0.3] },
+            textureUrl: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-buckingham.jpg",
+            thumbUrl: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-buckingham-thumb.jpg",
+            textureLocal: "upload-to-wordpress/mdfc-buckingham.jpg", thumbLocal: "upload-to-wordpress/mdfc-buckingham-thumb.jpg", tileSize: [0.3, 0.3] },
           { id: "sandringham", name: "Sandringham Chile", tagline: "Patterned loop", shownAs: "Chile", pricePerM2: 29,
             coloursUrl: null,
-            textureUrl: "TODO", thumbUrl: "TODO",
-            textureLocal: "textures/sandringham.jpg", thumbLocal: "textures/sandringham-thumb.jpg", tileSize: [0.11, 0.105] }
+            textureUrl: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-sandringham.jpg",
+            thumbUrl: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-sandringham-thumb.jpg",
+            textureLocal: "upload-to-wordpress/mdfc-sandringham.jpg", thumbLocal: "upload-to-wordpress/mdfc-sandringham-thumb.jpg", tileSize: [0.11, 0.105] }
         ]
       },
       vinyl: {
         label: "Vinyl",
+        browseUrl: "https://mydreamflooring.co.uk/vinyl-flooring/",
+        browseLabel: "Browse all our vinyl flooring",
         ranges: [
           { id: "expressions", name: "Expressions", tagline: "Wood and stone effect", shownAs: "Cedar Grey Herringbone", pricePerM2: 28,
-            coloursUrl: "TODO",
-            textureUrl: "TODO", thumbUrl: "TODO",
-            textureLocal: "textures/expressions.jpg", thumbLocal: "textures/expressions-thumb.jpg", tileSize: [0.68, 0.68] },
+            coloursUrl: "https://mydreamflooring.co.uk/vinyl-flooring/",
+            textureUrl: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-expressions.jpg",
+            thumbUrl: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-expressions-thumb.jpg",
+            textureLocal: "upload-to-wordpress/mdfc-expressions.jpg", thumbLocal: "upload-to-wordpress/mdfc-expressions-thumb.jpg", tileSize: [0.68, 0.68] },
           { id: "balmoral", name: "Balmoral", tagline: "Patterned", shownAs: "Pop Art", pricePerM2: 35,
-            coloursUrl: "TODO",
-            textureUrl: "TODO", thumbUrl: "TODO",
-            textureLocal: "textures/balmoral.jpg", thumbLocal: "textures/balmoral-thumb.jpg", tileSize: [0.332, 0.332] }
+            coloursUrl: "https://mydreamflooring.co.uk/vinyl-flooring/",
+            textureUrl: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-balmoral.jpg",
+            thumbUrl: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-balmoral-thumb.jpg",
+            textureLocal: "upload-to-wordpress/mdfc-balmoral.jpg", thumbLocal: "upload-to-wordpress/mdfc-balmoral-thumb.jpg", tileSize: [0.332, 0.332] }
         ]
       },
       laminate: {
         label: "Laminate",
+        browseUrl: "https://mydreamflooring.co.uk/laminate-range/",
+        browseLabel: "Browse all our laminate",
         ranges: [
-          { id: "laminate", name: "Laminate", tagline: "TODO", shownAs: "Atlas", pricePerM2: 35,
-            coloursUrl: "TODO",
-            textureUrl: "TODO", thumbUrl: "TODO",
-            textureLocal: "textures/laminate.jpg", thumbLocal: "textures/laminate-thumb.jpg", planks: [0.191, 1.9] }
+          { id: "laminate", name: "Laminate", tagline: "8mm, pet-proof and easy to clean", shownAs: "Atlas", pricePerM2: 35,
+            coloursUrl: "https://mydreamflooring.co.uk/laminate-range/",
+            textureUrl: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-laminate.jpg",
+            thumbUrl: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-laminate-thumb.jpg",
+            textureLocal: "upload-to-wordpress/mdfc-laminate.jpg", thumbLocal: "upload-to-wordpress/mdfc-laminate-thumb.jpg", planks: [0.191, 1.9] }
         ]
       }
     },
@@ -221,7 +244,6 @@
       roomShownIn: "Shown in {colour}. Your rep brings samples of the full range.",
       rangeCost: "{price} {per}",
       viewLarger: "View a larger swatch",
-      browseCarpets: "Browse every carpet and colour",
       newTab: "(opens in a new tab)",
       closeLightbox: "Close",
       noImage: "No image yet for {range}",
@@ -327,11 +349,23 @@
       return h === LIVE_HOST || h.slice(-(LIVE_HOST.length + 1)) === "." + LIVE_HOST;
     } catch (e) { return false; }
   }
-  // Live media-library URL on mydreamflooring.co.uk, otherwise the repo copy.
-  function assetUrl(live, local) {
-    if (isLiveSite() && hasText(live)) return live;
+  // On mydreamflooring.co.uk: the live media-library URL, with the repo copy as
+  // a fallback if it fails to load. Anywhere else: the repo copy.
+  const failedLive = {};
+  function localUrl(local) {
     if (!hasText(local)) return "";
     return /^(https?:)?\/\//.test(local) ? local : BASE + local;
+  }
+  function assetPair(live, local) {
+    const loc = localUrl(local);
+    if (isLiveSite() && hasText(live) && !failedLive[live]) return { src: live, fallback: loc && loc !== live ? loc : "" };
+    return { src: loc, fallback: "" };
+  }
+  function assetUrl(live, local) { return assetPair(live, local).src; }
+  // <img> attributes: src plus the fallback onImgError switches to if it fails
+  function imgSrcAttrs(live, local) {
+    const a = assetPair(live, local);
+    return 'src="' + esc(a.src) + '"' + (a.fallback ? ' data-fallback="' + esc(a.fallback) + '"' : "");
   }
 
   /* ---------- Catalogue (reads config, hides incomplete items) ---------- */
@@ -490,13 +524,17 @@
   // Nimbus + speech bubble. It bobs in the first time it appears (not on re-renders).
   function guideHtml(key, role, text, countAsSeen) {
     const n = (C.nimbus || {})[role] || {};
-    const src = guideImgFailed[role] ? "" : assetUrl(n.nimbusUrl, n.local);
-    const src2 = guideImgFailed[role] ? "" : assetUrl(n.nimbusUrl2x, n.local2x);
+    const one = assetPair(n.nimbusUrl, n.local), two = assetPair(n.nimbusUrl2x, n.local2x);
+    const src = guideImgFailed[role] ? "" : one.src;
+    const src2 = guideImgFailed[role] ? "" : two.src;
     const isNew = !guideSeen[key] && !REDUCE;
     if (countAsSeen !== false) guideSeen[key] = true;
     return '<div class="mdfc-guide mdfc-guide--' + role + (isNew ? " is-new" : "") + (src ? "" : " no-img") + '">' +
       (src ? '<img class="mdfc-guide-img" data-role="' + role + '" src="' + esc(src) + '"' +
-        (src2 ? ' srcset="' + esc(src) + " 1x, " + esc(src2) + ' 2x"' : "") + ' alt="" decoding="async">' : "") +
+        (src2 ? ' srcset="' + esc(src) + " 1x, " + esc(src2) + ' 2x"' : "") +
+        (one.fallback ? ' data-fallback="' + esc(one.fallback) + '"' +
+          (two.fallback ? ' data-fallback-srcset="' + esc(one.fallback) + " 1x, " + esc(two.fallback) + ' 2x"' : "") : "") +
+        ' alt="" decoding="async">' : "") +
       '<p class="mdfc-bubble">' + esc(text) + "</p></div>";
   }
   function guideGone(key) { guideSeen[key] = false; }
@@ -537,7 +575,7 @@
   function thumbHtml(rg) {
     const src = assetUrl(rg.thumbUrl, rg.thumbLocal);
     return src
-      ? '<img src="' + esc(src) + '" alt="' + esc(rg.name + " swatch") + '" loading="lazy">'
+      ? '<img ' + imgSrcAttrs(rg.thumbUrl, rg.thumbLocal) + ' alt="' + esc(rg.name + " swatch") + '" loading="lazy">'
       : '<span class="mdfc-thumb-empty" role="img" aria-label="' + esc(fmt(T.noImage, { range: rg.name })) + '">' + ICON.swatch + "</span>";
   }
 
@@ -612,7 +650,7 @@
         const first = visibleRanges(pk)[0];
         const sw = first ? assetUrl(first.thumbUrl, first.thumbLocal) : "";
         return '<button type="button" class="mdfc-product" id="mdfc-prod-' + esc(pk) + '" data-action="product" data-product="' + esc(pk) + '" aria-pressed="' + (r.product === pk) + '">' +
-          '<span class="mdfc-product-swatch">' + (sw ? '<img src="' + esc(sw) + '" alt="" loading="lazy">' : "") + "</span>" +
+          '<span class="mdfc-product-swatch">' + (sw ? '<img ' + imgSrcAttrs(first.thumbUrl, first.thumbLocal) + ' alt="" loading="lazy">' : "") + "</span>" +
           '<span class="mdfc-product-name">' + esc(productLabel(pk)) + "</span>" +
           '<span class="mdfc-product-from" data-cost-product="' + esc(pk) + '">' + esc(productFromText(pk)) + "</span></button>";
       }).join("") + "</div>" +
@@ -625,7 +663,8 @@
       visibleRanges(r.product).map(function (rg) {
         const on = r.range === rg.id;
         const link = hasText(rg.coloursUrl);
-        const big = !link && rg.coloursUrl === null ? (assetUrl(rg.textureUrl, rg.textureLocal) || assetUrl(rg.thumbUrl, rg.thumbLocal)) : "";
+        const bigPair = assetPair(rg.textureUrl, rg.textureLocal).src ? assetPair(rg.textureUrl, rg.textureLocal) : assetPair(rg.thumbUrl, rg.thumbLocal);
+        const big = !link && rg.coloursUrl === null ? bigPair.src : "";
         return '<li class="mdfc-card' + (on ? " is-on" : "") + (link || big ? "" : " is-solo") + '">' +
           '<button type="button" class="mdfc-range" id="mdfc-range-' + esc(rg.id) + '" data-action="range" data-range="' + esc(rg.id) + '" aria-pressed="' + on + '">' +
             '<span class="mdfc-thumb">' + thumbHtml(rg) + "</span>" +
@@ -636,13 +675,13 @@
           "</button>" +
           (link ? '<a class="mdfc-colours" href="' + esc(rg.coloursUrl) + '" target="_blank" rel="noopener" data-action="range-link" data-range="' + esc(rg.id) + '">' +
             "<span>" + esc(T.seeColours) + '<span class="mdfc-visually-hidden"> ' + esc(rg.name + " " + T.newTab) + "</span></span>" + ICON.arrow + "</a>" : "") +
-          (big ? '<button type="button" class="mdfc-colours" data-action="lightbox" data-src="' + esc(big) + '" data-alt="' + esc(rg.name + " swatch") + '">' +
+          (big ? '<button type="button" class="mdfc-colours" data-action="lightbox" data-src="' + esc(big) + '" data-fallback="' + esc(bigPair.fallback) + '" data-alt="' + esc(rg.name + " swatch") + '">' +
             "<span>" + esc(T.viewLarger) + "</span>" + ICON.arrow + "</button>" : "") +
           "</li>";
       }).join("") + "</ul>" +
       (hasText(p.includedNote) ? '<p class="mdfc-included">' + esc(p.includedNote) + "</p>" : "") +
-      (r.product === "carpet" && hasText(C.carpetPageUrl) ? '<a class="mdfc-browse" href="' + esc(C.carpetPageUrl) + '" target="_blank" rel="noopener">' +
-        esc(T.browseCarpets) + '<span class="mdfc-visually-hidden"> ' + esc(T.newTab) + "</span></a>" : "") +
+      (hasText(p.browseUrl) && hasText(p.browseLabel) ? '<a class="mdfc-browse" href="' + esc(p.browseUrl) + '" target="_blank" rel="noopener">' +
+        esc(p.browseLabel) + '<span class="mdfc-visually-hidden"> ' + esc(T.newTab) + "</span></a>" : "") +
       "</div>";
 
     panel.innerHTML = html;
@@ -755,8 +794,14 @@
     stageEl.classList.toggle("has-note", !!note);
     const sw = app.querySelector(".mdfc-stage-swatch");
     if (sw && rg) {
-      const src = assetUrl(rg.thumbUrl, rg.thumbLocal);
-      sw.style.backgroundImage = src ? 'url("' + src.replace(/"/g, "%22") + '")' : "none";
+      const pair = assetPair(rg.thumbUrl, rg.thumbLocal);
+      const setBg = function (u) { sw.style.backgroundImage = u ? 'url("' + u.replace(/"/g, "%22") + '")' : "none"; };
+      setBg(pair.src);
+      if (pair.fallback) {
+        const probe = new Image();
+        probe.onerror = function () { failedLive[rg.thumbUrl] = true; setBg(pair.fallback); };
+        probe.src = pair.src;
+      }
       sw.style.backgroundColor = rg.previewColour || "#d9d2c6";
     }
   }
@@ -926,14 +971,28 @@
         track("range_link_clicked", { range: el.getAttribute("data-range") });
         break;
       case "lightbox":
-        openLightbox(el.getAttribute("data-src"), el.getAttribute("data-alt"), el);
+        openLightbox(el.getAttribute("data-src"), el.getAttribute("data-alt"), el, el.getAttribute("data-fallback"));
         break;
       case "close-lightbox":
         closeLightbox();
         break;
-      case "book":
+      case "book": {
         track("book_visit_clicked", { total_high: estimate().high });
+        // Same-page form: scroll to it smoothly and put the cursor in its first field
+        const href = el.getAttribute("href") || "";
+        let target = null;
+        if (href.charAt(0) === "#" && href.length > 1) {
+          try { target = document.getElementById(decodeURIComponent(href.slice(1))); } catch (e) { target = null; }
+        }
+        if (target) {
+          ev.preventDefault();
+          try { target.scrollIntoView({ behavior: REDUCE ? "auto" : "smooth", block: "start" }); } catch (e) { target.scrollIntoView(); }
+          const field = target.querySelector("input:not([type=hidden]), select, textarea");
+          if (field) setTimeout(function () { try { field.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }, REDUCE ? 0 : 500);
+          try { if (history.replaceState) history.replaceState(null, "", href); } catch (e) { /* ignore */ }
+        }
         break;
+      }
       case "restart":
         track("calculator_restart", {});
         closeLightbox();
@@ -978,7 +1037,7 @@
 
   /* ---------- Lightbox (stays inside the container) ---------- */
   let lightboxTrigger = null;
-  function openLightbox(src, alt, trigger) {
+  function openLightbox(src, alt, trigger, fallback) {
     closeLightbox();
     lightboxTrigger = trigger || null;
     const lb = document.createElement("div");
@@ -986,7 +1045,7 @@
     lb.setAttribute("role", "dialog");
     lb.setAttribute("aria-modal", "true");
     lb.setAttribute("aria-label", alt);
-    lb.innerHTML = '<div class="mdfc-lightbox-inner"><img src="' + esc(src) + '" alt="' + esc(alt) + '">' +
+    lb.innerHTML = '<div class="mdfc-lightbox-inner"><img src="' + esc(src) + '"' + (fallback ? ' data-fallback="' + esc(fallback) + '"' : "") + ' alt="' + esc(alt) + '">' +
       '<button type="button" class="mdfc-lightbox-close" data-action="close-lightbox" aria-label="' + esc(T.closeLightbox) + '">' + ICON.close + "</button></div>";
     app.appendChild(lb);
     lb.querySelector("button").focus();
@@ -1007,6 +1066,21 @@
   function onImgError(ev) {
     const img = ev.target;
     if (!img || img.tagName !== "IMG" || !root.contains(img)) return;
+    const fb = img.getAttribute("data-fallback");
+    if (fb) {
+      // Live image failed: remember it, and switch to the repo copy
+      failedLive[img.getAttribute("src")] = true;
+      (img.getAttribute("srcset") || "").split(",").forEach(function (part) {
+        const u = part.trim().split(/\s+/)[0];
+        if (u) failedLive[u] = true;
+      });
+      img.removeAttribute("data-fallback");
+      const fbSet = img.getAttribute("data-fallback-srcset");
+      img.removeAttribute("data-fallback-srcset");
+      if (fbSet) img.setAttribute("srcset", fbSet); else img.removeAttribute("srcset");
+      img.setAttribute("src", fb);
+      return;
+    }
     if (img.classList.contains("mdfc-guide-img")) {
       guideImgFailed[img.getAttribute("data-role")] = true;
       const g = img.closest(".mdfc-guide");
@@ -1163,10 +1237,15 @@
       const fade = base.clone(); fade.transparent = true; fade.opacity = 0;
       const entry = { base: base, fade: fade, tex: null, tile: rg.tileSize || [0.5, 0.5], hasTexture: false };
       mats[rg.id] = entry;
-      const src = assetUrl(rg.textureUrl, rg.textureLocal);
+      const pair = assetPair(rg.textureUrl, rg.textureLocal);
+      const src = pair.src;
       if (!src) { loaded(); return entry; }
       const img = new Image();
-      img.onerror = loaded;
+      img.onerror = function () {
+        // Live image missing? Use the repo copy instead.
+        if (pair.fallback && img.src !== pair.fallback) { failedLive[rg.textureUrl] = true; img.src = pair.fallback; }
+        else loaded();
+      };
       img.crossOrigin = "anonymous";
       img.onload = function () {
         try {

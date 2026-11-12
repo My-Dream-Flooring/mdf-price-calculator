@@ -9,10 +9,11 @@ It's plain JavaScript and CSS with no framework and no build step. It renders st
 | `price-calculator.js` | The calculator. **All prices, ranges, sizes and wording are in `MDF_CONFIG` at the top.** |
 | `price-calculator.css` | Styles. Everything is scoped under `#mdf-price-calculator`. |
 | `index.html` | Demo/test page. |
-| `textures/` | Seamless floor tiles (1024px) and 160px thumbnails used by the demo, and on the live site until the media-library URLs are filled in. |
-| `textures/source/` | The original product photos the tiles were made from. |
-| `images/` | Nimbus guide images (WebP with transparency, 1x and 2x), made from `images/source/` by `tools/make_nimbus.py`. |
-| `tools/make_textures.py` | Rebuilds the tiles and thumbnails from `textures/source/` (Python 3 with Pillow and numpy). |
+| `upload-to-wordpress/` | **All 20 generated images** (floor tiles, thumbnails, Nimbus), ready to drag into the WordPress media library. They're also the fallback copies the calculator uses (see "Images"). |
+| `textures/source/` | The original product photos the floor tiles were made from. |
+| `images/source/` | The original Nimbus images. |
+| `tools/make_textures.py` | Rebuilds the floor tiles and thumbnails into `upload-to-wordpress/` (Python 3 with Pillow and numpy). |
+| `tools/make_nimbus.py` | Rebuilds the Nimbus images into `upload-to-wordpress/`. |
 | `vendor/three.min.js` | three.js r128 (MIT licence), used for the 3D preview. |
 | `reference/` | The approved prototype. |
 | `.nojekyll` | Tells GitHub Pages to serve the files as they are. |
@@ -28,14 +29,14 @@ It's plain JavaScript and CSS with no framework and no build step. It renders st
 
 ```html
 <div id="mdf-price-calculator"></div>
-<link rel="stylesheet" href="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.css?v=5">
-<script src="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.js?v=5" defer></script>
+<link rel="stylesheet" href="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.css?v=6">
+<script src="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.js?v=6" defer></script>
 ```
 
 3. Update the page and check it on your phone.
 
 Notes:
-- **Cache:** GitHub Pages and browsers cache files for a while. After any change, bump `?v=5` to `?v=6` (and so on) in both lines so visitors get the new version straight away.
+- **Cache:** GitHub Pages and browsers cache files for a while. After any change, bump `?v=6` to `?v=7` (and so on) in both lines so visitors get the new version straight away.
 - Use **one calculator per page**. It only looks for the element with `id="mdf-price-calculator"`.
 - Everything the script adds goes inside that `<div>`, including the three.js script and, if the page hasn't already loaded it, the Montserrat font link (weight 400 only).
 - three.js loads from the same place as `price-calculator.js` (`vendor/three.min.js`). If the page already has three.js, that copy is used instead.
@@ -45,37 +46,54 @@ Notes:
 
 ---
 
-## Textures
+## Images
 
-On **mydreamflooring.co.uk** the calculator loads each range's `textureUrl` and `thumbUrl` from the WordPress media library, which is the same site as the page, so WebGL can use them. Anywhere else (GitHub Pages, local testing), or while a live URL is still `"TODO"`, it uses the copies in this repo (`textureLocal` / `thumbLocal`). The repo copies are served with the headers WebGL needs, so the live site works on the fallback too.
+### Upload to WordPress
 
-### Files to upload to the media library
+**Upload these in November 2026 without renaming. If uploading in a later month, update the year/month in the URLs.**
 
-Upload these from `textures/` and paste each file's URL into the matching range in `MDF_CONFIG`:
+Drag everything in `upload-to-wordpress/` into the WordPress media library in one go. The calculator already points at them:
+`https://mydreamflooring.co.uk/wp-content/uploads/2026/11/[filename]`. The `mdfc-` prefix stops them clashing with your existing uploads.
 
-| Range | `textureUrl` | `thumbUrl` |
+| File | Used for | Config field |
 |---|---|---|
-| Westminster | `westminster.jpg` | `westminster-thumb.jpg` |
-| Buckingham | `buckingham.jpg` | `buckingham-thumb.jpg` |
-| Expressions | `expressions.jpg` | `expressions-thumb.jpg` |
-| Balmoral | `balmoral.jpg` | `balmoral-thumb.jpg` |
-| Laminate | `laminate.jpg` | `laminate-thumb.jpg` |
-| Sandringham Chile | `sandringham.jpg` | `sandringham-thumb.jpg` |
+| `mdfc-westminster.jpg` | Westminster floor in 3D | `textureUrl` |
+| `mdfc-westminster-thumb.jpg` | Westminster swatch | `thumbUrl` |
+| `mdfc-buckingham.jpg` | Buckingham floor in 3D | `textureUrl` |
+| `mdfc-buckingham-thumb.jpg` | Buckingham swatch | `thumbUrl` |
+| `mdfc-sandringham.jpg` | Sandringham Chile floor in 3D | `textureUrl` |
+| `mdfc-sandringham-thumb.jpg` | Sandringham Chile swatch | `thumbUrl` |
+| `mdfc-expressions.jpg` | Expressions floor in 3D | `textureUrl` |
+| `mdfc-expressions-thumb.jpg` | Expressions swatch | `thumbUrl` |
+| `mdfc-balmoral.jpg` | Balmoral floor in 3D | `textureUrl` |
+| `mdfc-balmoral-thumb.jpg` | Balmoral swatch | `thumbUrl` |
+| `mdfc-laminate.jpg` | Laminate floor in 3D | `textureUrl` |
+| `mdfc-laminate-thumb.jpg` | Laminate swatch | `thumbUrl` |
+| `mdfc-nimbus-wave.webp` / `mdfc-nimbus-wave-2x.webp` | Nimbus at the top of the controls | `nimbusUrl` / `nimbusUrl2x` |
+| `mdfc-nimbus-think.webp` / `mdfc-nimbus-think-2x.webp` | Nimbus while the 3D preview loads | `nimbusUrl` / `nimbusUrl2x` |
+| `mdfc-nimbus-point.webp` / `mdfc-nimbus-point-2x.webp` | Nimbus in the minimum order message | `nimbusUrl` / `nimbusUrl2x` |
+| `mdfc-nimbus-celebrate.webp` / `mdfc-nimbus-celebrate-2x.webp` | Nimbus in the price bar (inside Details on phones) | `nimbusUrl` / `nimbusUrl2x` |
 
-If a range has no texture at all, it shows a plain colour (`previewColour`) in the 3D preview with "Colour preview only for this range", and a placeholder swatch on its card.
+The retina Nimbus files end in `-2x` rather than `@2x`, because WordPress can change special characters in filenames.
 
-### Nimbus images to upload
+**Moving them to a different month:** WordPress files uploads by month. If they go into, say, December 2026, find `/uploads/2026/11/` in `price-calculator.js` and replace it with `/uploads/2026/12/` (20 matches).
 
-Upload these from `images/` and paste each URL into `MDF_CONFIG.nimbus` (`nimbusUrl` for the 1x file, `nimbusUrl2x` for the @2x file). Until then the repo copies are used.
+### How images are chosen
 
-| Role | Where Nimbus appears | `nimbusUrl` | `nimbusUrl2x` |
-|---|---|---|---|
-| wave | Top of the controls: "Pick your floor and I'll work out your weekly price…" | `nimbus-wave.webp` | `nimbus-wave@2x.webp` |
-| think | Centre of the 3D preview while it loads | `nimbus-think.webp` | `nimbus-think@2x.webp` |
-| point | Minimum order message | `nimbus-point.webp` | `nimbus-point@2x.webp` |
-| celebrate | Price bar (inside Details on phones) | `nimbus-celebrate.webp` | `nimbus-celebrate@2x.webp` |
+On **mydreamflooring.co.uk** the calculator loads each image from the media-library URL (`textureUrl`, `thumbUrl`, `nimbusUrl`, `nimbusUrl2x`). These are on the same site as the page, so the 3D preview can use them. **If one fails to load** (not uploaded yet, wrong month, renamed), it automatically switches to the copy in this repo's `upload-to-wordpress/` folder on GitHub Pages (`textureLocal`, `thumbLocal`, `local`, `local2x`). Anywhere else (GitHub Pages, local testing), the repo copies are used directly.
 
-If a Nimbus image can't load, the speech bubble shows on its own. To change which image is used for a role, edit `PICKS` in `tools/make_nimbus.py` and run `python3 tools/make_nimbus.py`.
+If a range has no texture at all, it shows a plain colour (`previewColour`) in the 3D preview with "Colour preview only for this range", and a placeholder swatch on its card. If a Nimbus image can't load from anywhere, the speech bubble shows on its own.
+
+### Nimbus
+
+| Role | Where Nimbus appears |
+|---|---|
+| wave | Top of the controls: "Pick your floor and I'll work out your weekly price…" |
+| think | Centre of the 3D preview while it loads |
+| point | Minimum order message |
+| celebrate | Price bar (inside Details on phones) |
+
+To change which image is used for a role, edit `PICKS` in `tools/make_nimbus.py` and run `python3 tools/make_nimbus.py`.
 
 ### Example colours
 
@@ -96,7 +114,7 @@ So floors look the right size in the room, each range says how much floor one ti
 
 ### Remaking the tiles
 
-Replace a photo in `textures/source/`, then from the repo folder run `python3 tools/make_textures.py`. How each tile is made, and why, is described at the top of that file. Mirrored tiles were tried first and broke every pattern, so carpets use a best-match seam, herringbone and the Balmoral checkerboard are cut on an exact pattern repeat, and laminate is offset-and-blended.
+Replace a photo in `textures/source/`, then from the repo folder run `python3 tools/make_textures.py`. The new files land in `upload-to-wordpress/`; upload the changed ones to WordPress again (replacing the old ones, same names). How each tile is made, and why, is described at the top of that file. Mirrored tiles were tried first and broke every pattern, so carpets use a best-match seam, herringbone and the Balmoral checkerboard are cut on an exact pattern repeat, and laminate is offset-and-blended.
 
 ---
 
@@ -123,17 +141,16 @@ The easy way to edit, straight on GitHub:
 | `prefitPercent` | "Paid before fitting" as a percentage of the total. It includes the deposit and is never less than the deposit. |
 | `showPrefit` | `true` shows "paid before fitting" in the price bar and small print. `false` hides it. |
 | `financeBadge` | The finance claims, e.g. `["0% interest", "No credit checks"]`. Shown as a strip at the top and as chips in the price bar. Use `[]` to hide both. |
-| `bookingUrl` | Where "Book my free home visit" goes. |
-| `carpetPageUrl` | Where "Browse every carpet and colour" goes. |
+| `bookingUrl` | Where "Book my free home visit" goes. Currently `#mdfc-booking`: the button scrolls smoothly to the element with CSS ID `mdfc-booking` on the same page (the inline booking form) and puts the cursor in its first field. If you rename the form's CSS ID in Elementor, update this to match. A full web address (`https://…`) opens that page instead. |
 | `maxRooms` | Most rooms a customer can add. |
-| `products` | Carpet, Vinyl, Laminate and their ranges (see below). |
+| `products` | Carpet, Vinyl, Laminate and their ranges (see below). Each product also has `browseUrl` and `browseLabel`: the link under its ranges ("Browse every carpet and colour", "Browse all our vinyl flooring", "Browse all our laminate"). |
 | `roomPresets` | Room types and their Small / Medium / Large sizes as `[length, width]` in metres. |
 | `stairs` | Stairs option: which products are allowed (`products: ["carpet"]`), m² for a straight flight, a flight with a turn, and the landing. `enabled: false` removes it. |
 | `defaultRoom` / `defaultProduct` | What the calculator starts on. |
 | `sizeLimits` | Range of the "I know my measurements" sliders, in metres. |
 | `comparisonsWeekly` / `comparisonsMonthly` | The everyday comparison after the daily price, e.g. "That's £2.14 a day · less than four coffees on the go". Each entry applies when the weekly (or monthly) payment is at or below `max`; the first match wins and nothing shows above the last entry. The daily figure is weekly ÷ 7, or monthly × 12 ÷ 365. Use `[]` to turn one off. |
 | `displayFont` | Font for headings, range names and the big weekly/monthly figure. Default `'Tan Nimbus', 'Montserrat', sans-serif`. The live site already loads Tan Nimbus; the calculator doesn't load it, so the demo shows Montserrat. |
-| `nimbus` | The Nimbus guide images (see "Nimbus images to upload"). |
+| `nimbus` | The Nimbus guide images (see "Images"). |
 | `copy` | Every piece of text customers see, including Nimbus's speech bubbles (`guideWave`, `guideThink`, `minOrderAddPrompt`, `guideCelebrateOne` / `Stairs` / `Many`). |
 
 Each range looks like this:
@@ -141,9 +158,9 @@ Each range looks like this:
 ```js
 { id: "westminster", name: "Westminster", tagline: "Hard-wearing Saxony", shownAs: "Mid Grey", pricePerM2: 29,
   coloursUrl: "https://mydreamflooring.co.uk/carpets/?e-filter-101e477-flooring_tier=classic",
-  textureUrl: "https://mydreamflooring.co.uk/wp-content/uploads/.../westminster.jpg",
-  thumbUrl: "https://mydreamflooring.co.uk/wp-content/uploads/.../westminster-thumb.jpg",
-  textureLocal: "textures/westminster.jpg", thumbLocal: "textures/westminster-thumb.jpg", tileSize: [0.25, 0.25] },
+  textureUrl: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-westminster.jpg",
+  thumbUrl: "https://mydreamflooring.co.uk/wp-content/uploads/2026/11/mdfc-westminster-thumb.jpg",
+  textureLocal: "upload-to-wordpress/mdfc-westminster.jpg", thumbLocal: "upload-to-wordpress/mdfc-westminster-thumb.jpg", tileSize: [0.25, 0.25] },
 ```
 
 - `pricePerM2` is a plain number (no £, no quote marks), in £ per m², supply only. It's used for the maths only and never shown. Customers see the range's weekly or monthly cost for their room instead.
@@ -164,9 +181,9 @@ If something isn't ready yet, write `"TODO"` and the calculator copes:
 | `tagline` | No tagline |
 | `coloursUrl` | No "Explore the full range" link |
 | `pricePerM2` | That range is hidden |
-| `textureUrl` / `thumbUrl` | The repo copy is used instead |
+| `textureUrl` / `thumbUrl` / `nimbusUrl` | The repo copy is used instead |
 | `bookingUrl` | No booking button |
-| `carpetPageUrl` | No "Browse every carpet and colour" link |
+| `browseUrl` | No "Browse …" link under that product's ranges |
 
 If every range in a product is hidden, the whole product is hidden.
 

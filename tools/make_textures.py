@@ -11,7 +11,9 @@ from PIL import Image, ImageFilter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "textures", "source")
-OUT = os.path.join(ROOT, "textures")
+# Output goes straight into the folder that is uploaded to WordPress, with an
+# "mdfc-" prefix so the names can't clash with other uploads.
+OUT = os.path.join(ROOT, "upload-to-wordpress")
 
 # name -> (source file, method, crop box (x, y, w, h) inside the source photo)
 #   mirror : mirrored 2x2 tile of the crop
@@ -209,6 +211,6 @@ if __name__ == "__main__":
                 rep.save(os.path.join(out, f"{n}-{m}-2x2.jpg"), quality=85)
         sys.exit()
     for n in TEXTURES:
-        build(n).save(os.path.join(OUT, f"{n}.jpg"), quality=80, optimize=True, progressive=True)
-        thumb(n).save(os.path.join(OUT, f"{n}-thumb.jpg"), quality=82, optimize=True)
+        build(n).save(os.path.join(OUT, f"mdfc-{n}.jpg"), quality=80, optimize=True, progressive=True)
+        thumb(n).save(os.path.join(OUT, f"mdfc-{n}-thumb.jpg"), quality=82, optimize=True)
         print("wrote", n)

@@ -1,14 +1,19 @@
 # MDF Price Calculator
 
-A flooring price calculator for the My Dream Flooring website. Customers add their rooms, choose a product and range for each, and get an estimated **supply-only** price plus a weekly or monthly payment. Fitting isn't included: the local rep prices it on the day.
+A flooring price calculator for the My Dream Flooring website, with a live 3D preview of the room. Customers add their rooms (or stairs), pick a size, choose carpet, vinyl or laminate and a range, and see the floor change in 3D while a price bar shows the estimated **supply-only** cost and the weekly or monthly payment. Fitting isn't included: the local rep prices it on the day.
 
-It's plain JavaScript and CSS with no framework and no build step. It renders straight into the WordPress page (not an iframe), so Hotjar, GTM and the Meta pixel can see every interaction.
+It's plain JavaScript and CSS with no framework and no build step. It renders straight into the WordPress page (not an iframe), so Hotjar, GTM and the Meta pixel can see every interaction. The visual and interaction design follows the approved prototype in `reference/prototype-carpet-configurator.html`.
 
-| File | What it is |
+| File / folder | What it is |
 |---|---|
-| `price-calculator.js` | The calculator. **All prices and wording are in `MDF_CONFIG` at the top.** |
+| `price-calculator.js` | The calculator. **All prices, ranges, sizes and wording are in `MDF_CONFIG` at the top.** |
 | `price-calculator.css` | Styles. Everything is scoped under `#mdf-price-calculator`. |
 | `index.html` | Demo/test page. |
+| `textures/` | Seamless floor tiles (1024px) and 160px thumbnails used by the demo, and on the live site until the media-library URLs are filled in. |
+| `textures/source/` | The original product photos the tiles were made from. |
+| `tools/make_textures.py` | Rebuilds the tiles and thumbnails from `textures/source/` (Python 3 with Pillow and numpy). |
+| `vendor/three.min.js` | three.js r128 (MIT licence), used for the 3D preview. |
+| `reference/` | The approved prototype. |
 | `.nojekyll` | Tells GitHub Pages to serve the files as they are. |
 
 **Live demo:** https://my-dream-flooring.github.io/mdf-price-calculator/
@@ -17,22 +22,61 @@ It's plain JavaScript and CSS with no framework and no build step. It renders st
 
 ## Embedding it in Elementor
 
-1. Edit the page in Elementor and drag an **HTML** widget where you want the calculator.
+1. Edit the page in Elementor and drag an **HTML** widget where you want the calculator. A full-width section works best: at 820px wide or more it shows the 3D preview and the controls side by side.
 2. Paste in exactly this:
 
 ```html
 <div id="mdf-price-calculator"></div>
-<link rel="stylesheet" href="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.css?v=1">
-<script src="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.js?v=1" defer></script>
+<link rel="stylesheet" href="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.css?v=3">
+<script src="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.js?v=3" defer></script>
 ```
 
 3. Update the page and check it on your phone.
 
 Notes:
-- **Cache:** GitHub Pages and browsers cache files for a while. After you change prices, bump `?v=1` to `?v=2` (and so on) in both lines so visitors get the new version straight away.
+- **Cache:** GitHub Pages and browsers cache files for a while. After any change, bump `?v=3` to `?v=4` (and so on) in both lines so visitors get the new version straight away.
 - Use **one calculator per page**. It only looks for the element with `id="mdf-price-calculator"`.
-- The script only changes things inside that `<div>`. The one exception: if the page hasn't already loaded the Montserrat font, it adds a Google Fonts link (weight 400 only) to the page `<head>`.
-- If a caching or optimisation plugin (WP Rocket, Autoptimize, etc.) delays or combines JavaScript, exclude `price-calculator.js` from that.
+- Everything the script adds goes inside that `<div>`, including the three.js script and, if the page hasn't already loaded it, the Montserrat font link (weight 400 only).
+- three.js loads from the same place as `price-calculator.js` (`vendor/three.min.js`). If the page already has three.js, that copy is used instead.
+- If WebGL isn't available, the preview shows a swatch with a short message and the price still works.
+- If a caching or optimisation plugin (WP Rocket, Autoptimize, etc.) delays or combines JavaScript, exclude `price-calculator.js` and `three.min.js` from that.
+- The price bar sticks to the bottom of the screen while the calculator is in view. If an Elementor section around it has **Overflow: Hidden**, the bar won't stick (it still shows, just not pinned). Set overflow back to Default on that section if you want it pinned.
+
+---
+
+## Textures
+
+On **mydreamflooring.co.uk** the calculator loads each range's `textureUrl` and `thumbUrl` from the WordPress media library, which is the same site as the page, so WebGL can use them. Anywhere else (GitHub Pages, local testing), or while a live URL is still `"TODO"`, it uses the copies in this repo (`textureLocal` / `thumbLocal`). The repo copies are served with the headers WebGL needs, so the live site works on the fallback too.
+
+### Files to upload to the media library
+
+Upload these from `textures/` and paste each file's URL into the matching range in `MDF_CONFIG`:
+
+| Range | `textureUrl` | `thumbUrl` |
+|---|---|---|
+| Westminster | `westminster.jpg` | `westminster-thumb.jpg` |
+| Buckingham | `buckingham.jpg` | `buckingham-thumb.jpg` |
+| Expressions | `expressions.jpg` | `expressions-thumb.jpg` |
+| Balmoral | `balmoral.jpg` | `balmoral-thumb.jpg` |
+| Laminate | `laminate.jpg` | `laminate-thumb.jpg` |
+
+Sandringham Chile has no texture yet. It shows a plain colour (`previewColour`) in the 3D preview with "Colour preview only for this range", and a placeholder swatch on its card.
+
+### Real-world scale
+
+So floors look the right size in the room, each range says how much floor one tile covers:
+
+| Range | Setting | Source |
+|---|---|---|
+| Balmoral | `tileSize: [0.332, 0.332]` | 166mm squares, two each way |
+| Laminate | `planks: [0.191, 1.9]` | 191 × 1900mm planks. The preview lays them in staggered rows with joints, using the grain photo |
+| Expressions | `tileSize: [0.68, 0.68]` | Estimated (about 85mm wide herringbone blocks). Update if you have the block size |
+| Westminster | `tileSize: [0.25, 0.25]` | Estimated from the pile in the photo |
+| Buckingham | `tileSize: [0.3, 0.3]` | Estimated from the pile in the photo |
+
+### Remaking the tiles
+
+Replace a photo in `textures/source/`, then from the repo folder run `python3 tools/make_textures.py`. How each tile is made, and why, is described at the top of that file. Mirrored tiles were tried first and broke every pattern, so carpets use a best-match seam, herringbone and the Balmoral checkerboard are cut on an exact pattern repeat, and laminate is offset-and-blended.
 
 ---
 
@@ -51,36 +95,41 @@ The easy way to edit, straight on GitHub:
 
 | Setting | Meaning |
 |---|---|
-| `wastePercent` | Extra material for cutting and waste. The high end of the estimate includes it. Currently `0`, so customers see a single figure instead of a range. Raise it (e.g. `10`) to show a range again. |
-| `financeBadge` | The finance claims, e.g. `["0% interest", "No credit checks"]`. Shown as a strip at the top of the first step and above the payment card on the results screen. Use `[]` to hide both strips. |
-| `depositPerRoom` | Deposit in £ per room. |
-| `minOrder` | Minimum order value (£) for the whole order. If the high estimate is below this, the total becomes this figure (see "How the estimate works"). |
-| `termWeeks` | Number of weeks the customer pays over. Monthly payments show "over N months", rounded up (36 weeks = 9 months). |
-| `minWeekly` | Lowest weekly payment shown (£). If the maths comes out lower, this figure is shown instead, with no message about it. |
-| `minMonthly` | Lowest monthly payment shown (£). Works the same way as `minWeekly`. |
-| `prefitPercent` | The "Paid before fitting" amount, as a percentage of the high total. It includes the deposit and is never less than the deposit. |
-| `showPrefit` | `true` shows the "Paid before fitting" line on the results screen. `false` hides it completely. |
+| `wastePercent` | Extra material for cutting and waste. Currently `0`, so customers see a single figure. Raise it (e.g. `10`) to show a range ("£450 to £495"). |
+| `depositPerRoom` | Deposit in £ per room. Stairs count as a room. |
+| `minOrder` | Minimum order value (£) for the whole order (see "How the estimate works"). |
+| `termWeeks` | Number of weeks the customer pays over. Monthly shows "over N months", rounded up (36 weeks = 9 months). |
+| `minWeekly` / `minMonthly` | Lowest weekly / monthly payment shown (£). Applied silently. |
+| `prefitPercent` | "Paid before fitting" as a percentage of the total. It includes the deposit and is never less than the deposit. |
+| `showPrefit` | `true` shows "paid before fitting" in the price bar and small print. `false` hides it. |
+| `financeBadge` | The finance claims, e.g. `["0% interest", "No credit checks"]`. Shown as a strip at the top and as chips in the price bar. Use `[]` to hide both. |
 | `bookingUrl` | Where "Book my free home visit" goes. |
-| `carpetPageUrl` | Where "Not sure? Browse our carpets first" goes. |
-| `products` | Laminate, Vinyl, Carpet and their ranges (see below). |
-| `roomPresets` | Room types and their Small / Medium / Large sizes in m². |
-| `sizeLimits` | Smallest and largest length or width (metres) customers can type in. |
+| `carpetPageUrl` | Where "Browse every carpet and colour" goes. |
+| `maxRooms` | Most rooms a customer can add. |
+| `products` | Carpet, Vinyl, Laminate and their ranges (see below). |
+| `roomPresets` | Room types and their Small / Medium / Large sizes as `[length, width]` in metres. |
+| `stairs` | Stairs option: which products are allowed (`products: ["carpet"]`), m² for a straight flight, a flight with a turn, and the landing. `enabled: false` removes it. |
+| `defaultRoom` / `defaultProduct` | What the calculator starts on. |
+| `sizeLimits` | Range of the "I know my measurements" sliders, in metres. |
+| `dailyComparisons` | The "about the same as a takeaway" text after the daily price. Use `[]` to turn it off. |
 | `copy` | Every piece of text customers see. |
 
 Each range looks like this:
 
 ```js
-{ id: "westminster", name: "Westminster", tagline: "Hard wearing", pricePerM2: 29, image: "https://.../westminster.jpg", link: "https://.../westminster/" }
+{ id: "westminster", name: "Westminster", tagline: "Soft twist, everyday", pricePerM2: 29, link: "https://.../westminster/",
+  textureUrl: "https://mydreamflooring.co.uk/wp-content/uploads/.../westminster.jpg",
+  thumbUrl: "https://mydreamflooring.co.uk/wp-content/uploads/.../westminster-thumb.jpg",
+  textureLocal: "textures/westminster.jpg", thumbLocal: "textures/westminster-thumb.jpg", tileSize: [0.25, 0.25] },
 ```
 
 - `pricePerM2` is a plain number (no £, no quote marks), in £ per m², supply only.
-- `image` should be a square photo, ideally at least 600×600px. Upload it to the WordPress Media Library and paste its full URL.
-- `link` opens in a new tab. Use `null` (no quote marks) if there's no range page: tapping the swatch then opens a bigger version of the image instead.
-- To add a range, copy a whole `{ ... },` line and change it. Every line except the last in the list needs a comma at the end.
+- `link` opens in a new tab as "See the full range of colours". Use `null` (no quote marks) if there's no range page: the card then offers "View a larger swatch" instead, when there's an image.
+- To add a range, copy a whole `{ ... },` block and change it. Every block except the last in the list needs a comma at the end.
 
 ### Turning the "Paid before fitting" line off
 
-Find `showPrefit: true,` in `MDF_CONFIG` and change it to `showPrefit: false,` (no quote marks). Commit, then bump `?v=` in the Elementor widget. To turn it back on, change it to `true`. To change the amount, edit `prefitPercent` (for example `prefitPercent: 25,`).
+Find `showPrefit: true,` in `MDF_CONFIG` and change it to `showPrefit: false,` (no quote marks). Commit, then bump `?v=` in the Elementor widget. To change the amount, edit `prefitPercent` (for example `prefitPercent: 25,`).
 
 ### "TODO" values
 
@@ -89,11 +138,11 @@ If something isn't ready yet, write `"TODO"` and the calculator copes:
 | TODO in… | What customers see |
 |---|---|
 | `tagline` | No tagline |
-| `image` | A plain placeholder swatch |
-| `link` | No "See the range" link |
+| `link` | No "See the full range of colours" link |
 | `pricePerM2` | That range is hidden |
+| `textureUrl` / `thumbUrl` | The repo copy is used instead |
 | `bookingUrl` | No booking button |
-| `carpetPageUrl` | No "Browse our carpets" link |
+| `carpetPageUrl` | No "Browse every carpet and colour" link |
 
 If every range in a product is hidden, the whole product is hidden.
 
@@ -105,17 +154,15 @@ Open the demo page after GitHub Pages updates. If the calculator doesn't appear,
 
 ## How the estimate works
 
-- **Room area:** length × width, or the preset m².
-- **Per room:** low = area × price; high = area × (1 + waste %) × price. Each is rounded to the nearest £5.
-- **Total:** the sum of the rooms' lows and highs.
-- **Single figure:** when low and high are the same (as with `wastePercent: 0`), a single figure is shown instead of a range, in the headline and the room lines. Deposit, pre-fit and payments all use that total.
-- **Minimum order:** if the high total is below `minOrder`, `minOrder` is used as the total for everything: the headline (shown as a single figure, e.g. "£300", with "Our minimum order is £300" underneath), the payments and the pre-fit amount. Each room's line still shows its real estimate. Customers also see "Got another room in mind? Add it and it's still one order", with an "Add a room" button that takes them back to the rooms step with their rooms kept.
-- **Deposit:** `depositPerRoom` × number of rooms, shown separately.
-- **Base weekly:** (high total − deposit) ÷ `termWeeks`.
-- **Weekly:** the higher of base weekly and `minWeekly`, rounded **up** to the nearest 50p.
+- **Room area:** length × width (preset or slider). Stairs: the flight's m² plus the landing if included.
+- **Per room:** area × price, rounded to the nearest £5 (with `wastePercent` above 0, the high end also adds waste).
+- **Total:** the sum of the rooms.
+- **Minimum order:** if the total is below `minOrder`, `minOrder` is used as the total for everything: the price, payments and pre-fit. The price bar shows "Our minimum order is £300", and the rooms list offers "Got another room in mind? Add it and it's still one order" with an "Add a room" button. Each room still shows its real price.
+- **Deposit:** `depositPerRoom` × number of rooms.
+- **Base weekly:** (total − deposit) ÷ `termWeeks`.
+- **Weekly:** the higher of base weekly and `minWeekly`, rounded **up** to the nearest 50p. The daily figure is weekly ÷ 7.
 - **Monthly:** the higher of (base weekly × 52 ÷ 12) and `minMonthly`, rounded **up** to the nearest £1.
-- **Paid before fitting:** the higher of (high total × `prefitPercent` ÷ 100) and the deposit, rounded **up** to the nearest £1. It includes the deposit. Shown only if `showPrefit` is `true`.
-- If a customer skips choosing a range, the cheapest range for that product is used and the result is labelled "From".
+- **Paid before fitting:** the higher of (total × `prefitPercent` ÷ 100) and the deposit, rounded **up** to the nearest £1.
 
 ---
 
@@ -125,17 +172,21 @@ Each event is pushed to `window.dataLayer` as `{ event: "<name>", ...params }`, 
 
 | Event | Params | Fires when |
 |---|---|---|
-| `calculator_start` | none | First click or typing in the calculator (again after a restart) |
-| `room_added` | `room_type`, `size_method` (`exact` / `preset`) | Once per room, when they continue from the rooms step |
-| `product_selected` | `product` | A product card is tapped |
-| `range_selected` | `product`, `range` | A range is chosen (not fired on Skip) |
-| `range_link_clicked` | `range` | "See the range" is clicked |
-| `estimate_viewed` | `rooms`, `product_mix` (e.g. `carpet:2\|vinyl:1`), `total_low`, `total_high`, `prefit`, `payment_frequency` (`weekly` / `monthly`) | Results screen is shown |
+| `calculator_start` | none | First interaction (again after a restart) |
+| `room_added` | `room_type`, `rooms` | A room is added |
+| `room_removed` | `rooms` | A room is removed |
+| `room_type_selected` | `room_type` | A room type pill (or Stairs) is tapped |
+| `size_selected` | `size_method` (`preset` / `exact` / `stairs`), `size` | A size is picked, or the sliders are first used |
+| `product_selected` | `product` | Carpet / Vinyl / Laminate is tapped |
+| `range_selected` | `product`, `range` | A range card is tapped |
+| `range_link_clicked` | `range` | "See the full range of colours" is clicked |
+| `preview_rotated` | none | The 3D preview is first dragged |
+| `estimate_viewed` | `rooms`, `product_mix` (e.g. `carpet:2\|vinyl:1`), `total_low`, `total_high`, `prefit`, `payment_frequency` | The price settles (about a second after a change), once per new price |
+| `min_order_applied` | `total_high_before_floor` | Alongside `estimate_viewed`, when the minimum order applies |
+| `add_room_from_min_order` | none | "Add a room" under the minimum order notice is clicked |
 | `payment_toggle` | `payment_period` (`weekly` / `monthly`) | Payment toggle changes |
 | `book_visit_clicked` | `total_high` | "Book my free home visit" is clicked |
 | `calculator_restart` | none | "Start again" is clicked |
-| `min_order_applied` | `total_high_before_floor` | The results screen is shown and the minimum order is applied |
-| `add_room_from_min_order` | none | "Add a room" under the minimum order notice is clicked |
 
 For the Meta pixel, create GTM tags that fire on these dataLayer events (for example, `book_visit_clicked` → Lead).
 

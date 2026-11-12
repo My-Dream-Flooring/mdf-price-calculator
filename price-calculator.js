@@ -37,6 +37,17 @@
     // Number of weeks the customer pays over.
     termWeeks: 36,
 
+    // Lowest weekly / monthly payment we show (£). If the maths comes out
+    // lower, the customer just sees this figure (no message about it).
+    minWeekly: 15,
+    minMonthly: 65,
+
+    // "Paid before fitting" line on the results screen.
+    // Pre-fit = the higher of (high total x prefitPercent / 100) and the
+    // deposit, rounded up to the nearest £1. It INCLUDES the deposit. Set showPrefit to false to hide the line.
+    prefitPercent: 20,
+    showPrefit: true,
+
     // Where the "Book my free home visit" button goes.
     bookingUrl: "https://mydreamflooring.co.uk",
 
@@ -150,6 +161,8 @@
       breakdownHeading: "Your rooms",
       depositLabel: "Deposit",
       depositDetail: "{perRoom} per room",
+      prefitLabel: "Paid before fitting",
+      prefitDetail: "This includes your {deposit} deposit. Your rep will talk you through it.",
       fittingNote: "Fitting is priced by your local rep on the day.",
       smallPrint: "This is an estimate based on the sizes you entered. Your rep will measure up and confirm your price.",
       bookCta: "Book my free home visit",
@@ -315,10 +328,12 @@
     const high = lines.reduce(function (s, l) { return s + l.high; }, 0);
     const deposit = (Number(C.depositPerRoom) || 0) * lines.length;
     const term = Number(C.termWeeks) || 1;
-    const weekly = ceilHalf(Math.max(0, high - deposit) / term);
-    const monthly = ceilPound(weekly * 52 / 12);
+    const baseWeekly = Math.max(0, high - deposit) / term;
+    const weekly = ceilHalf(Math.max(baseWeekly, Number(C.minWeekly) || 0));
+    const monthly = ceilPound(Math.max(baseWeekly * 52 / 12, Number(C.minMonthly) || 0));
+    const prefit = ceilPound(Math.max(high * (Number(C.prefitPercent) || 0) / 100, deposit));
     return {
-      lines: lines, low: low, high: high, deposit: deposit, weekly: weekly, monthly: monthly,
+      lines: lines, low: low, high: high, deposit: deposit, weekly: weekly, monthly: monthly, prefit: prefit,
       from: lines.some(function (l) { return l.skipped; }),
       belowMin: high < (Number(C.minOrder) || 0)
     };
@@ -536,7 +551,20 @@
         '<p class="mdfc-hero-label">' + esc(T.supplyLabel) + "</p>" +
         '<p class="mdfc-hero-figure">' + (e.from ? '<span class="mdfc-from">' + esc(T.fromPrefix) + "</span> " : "") + headline + "</p>" +
         (e.belowMin ? '<p class="mdfc-notice">' + ICON.info + "<span>" + esc(fmt(T.minOrderNote, { minOrder: money(C.minOrder) })) + "</span></p>" : "") +
-        '<p class="mdfc-fitting">' + ICON.info + "<span>" + esc(T.fittingNote) + "</span></p>" +
+      "</div>" +
+
+      '<div class="mdfc-card">' +
+        '<h3 class="mdfc-h3">' + esc(T.breakdownHeading) + "</h3>" +
+        '<ul class="mdfc-lines" role="list">' + lines +
+          '<li class="mdfc-line mdfc-line--deposit"><div class="mdfc-line-main"><span class="mdfc-line-title">' + esc(T.depositLabel) + "</span>" +
+          '<span class="mdfc-line-meta">' + esc(fmt(T.depositDetail, { perRoom: money(C.depositPerRoom) })) + " × " + e.lines.length + "</span></div>" +
+          '<span class="mdfc-line-amount">' + esc(money(e.deposit)) + "</span></li>" +
+          (C.showPrefit === true
+            ? '<li class="mdfc-line mdfc-line--prefit"><div class="mdfc-line-main"><span class="mdfc-line-title">' + esc(T.prefitLabel) + "</span>" +
+              '<span class="mdfc-line-meta">' + esc(fmt(T.prefitDetail, { deposit: money(e.deposit) })) + "</span></div>" +
+              '<span class="mdfc-line-amount">' + esc(money(e.prefit)) + "</span></li>"
+            : "") +
+        "</ul>" +
       "</div>" +
 
       '<div class="mdfc-card mdfc-pay">' +
@@ -548,14 +576,7 @@
         '<p class="mdfc-muted">' + esc(termTxt) + ", " + esc(fmt(T.afterDeposit, { deposit: money(e.deposit) })) + "</p>" +
       "</div>" +
 
-      '<div class="mdfc-card">' +
-        '<h3 class="mdfc-h3">' + esc(T.breakdownHeading) + "</h3>" +
-        '<ul class="mdfc-lines" role="list">' + lines +
-          '<li class="mdfc-line mdfc-line--deposit"><div class="mdfc-line-main"><span class="mdfc-line-title">' + esc(T.depositLabel) + "</span>" +
-          '<span class="mdfc-line-meta">' + esc(fmt(T.depositDetail, { perRoom: money(C.depositPerRoom) })) + " × " + e.lines.length + "</span></div>" +
-          '<span class="mdfc-line-amount">' + esc(money(e.deposit)) + "</span></li>" +
-        "</ul>" +
-      "</div>" +
+      '<p class="mdfc-fitting mdfc-fitting--standalone">' + ICON.info + "<span>" + esc(T.fittingNote) + "</span></p>" +
 
       '<p class="mdfc-smallprint">' + esc(T.smallPrint) + "</p>" +
       book +
@@ -620,7 +641,9 @@
         rooms: e.lines.length,
         product_mix: Object.keys(mix).sort().map(function (k) { return k + ":" + mix[k]; }).join("|"),
         total_low: e.low,
-        total_high: e.high
+        total_high: e.high,
+        prefit: e.prefit,
+        payment_frequency: state.payment
       });
     }
   }

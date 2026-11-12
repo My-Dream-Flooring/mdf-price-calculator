@@ -31,7 +31,9 @@
     // Deposit charged per room (£). Shown separately on the results.
     depositPerRoom: 40,
 
-    // Minimum order (£). If the high estimate is below this, we show a notice.
+    // Minimum order value (£) for the whole order. If the high estimate is
+    // below this, this figure is used as the total for everything (headline,
+    // deposit maths, pre-fit and payments). Room lines still show real prices.
     minOrder: 300,
 
     // Number of weeks the customer pays over.
@@ -151,6 +153,8 @@
       fromPrefix: "From",
       cheapestRangeNote: "from our cheapest {product} range",
       minOrderNote: "Our minimum order is {minOrder}",
+      minOrderAddPrompt: "Got another room in mind? Add it and it's still one order",
+      minOrderAddButton: "Add a room",
       paymentLabel: "How would you like to see payments?",
       weekly: "Weekly",
       monthly: "Monthly",
@@ -324,8 +328,13 @@
         low: round5(a * price), high: round5(a * waste * price)
       };
     });
-    const low = lines.reduce(function (s, l) { return s + l.low; }, 0);
-    const high = lines.reduce(function (s, l) { return s + l.high; }, 0);
+    const rawLow = lines.reduce(function (s, l) { return s + l.low; }, 0);
+    const rawHigh = lines.reduce(function (s, l) { return s + l.high; }, 0);
+    // Minimum order: if the high total is below minOrder, minOrder becomes the total
+    const minOrder = Number(C.minOrder) || 0;
+    const belowMin = rawHigh < minOrder;
+    const low = belowMin ? minOrder : rawLow;
+    const high = belowMin ? minOrder : rawHigh;
     const deposit = (Number(C.depositPerRoom) || 0) * lines.length;
     const term = Number(C.termWeeks) || 1;
     const baseWeekly = Math.max(0, high - deposit) / term;
@@ -334,8 +343,8 @@
     const prefit = ceilPound(Math.max(high * (Number(C.prefitPercent) || 0) / 100, deposit));
     return {
       lines: lines, low: low, high: high, deposit: deposit, weekly: weekly, monthly: monthly, prefit: prefit,
-      from: lines.some(function (l) { return l.skipped; }),
-      belowMin: high < (Number(C.minOrder) || 0)
+      from: !belowMin && lines.some(function (l) { return l.skipped; }),
+      belowMin: belowMin, rawHigh: rawHigh
     };
   }
 
@@ -531,7 +540,7 @@
     const weekly = state.payment === "weekly";
     const termTxt = fmt(T.overTerm, { weeks: C.termWeeks });
     const nw = function (v) { return '<span class="mdfc-nowrap">' + esc(money(v)) + "</span>"; };
-    const headline = fmt(esc(T.priceRange), { low: nw(e.low), high: nw(e.high) });
+    const headline = e.belowMin ? nw(e.high) : fmt(esc(T.priceRange), { low: nw(e.low), high: nw(e.high) });
 
     const lines = e.lines.map(function (l) {
       const rangeTxt = l.skipped
@@ -550,7 +559,9 @@
       '<div class="mdfc-card mdfc-hero">' +
         '<p class="mdfc-hero-label">' + esc(T.supplyLabel) + "</p>" +
         '<p class="mdfc-hero-figure">' + (e.from ? '<span class="mdfc-from">' + esc(T.fromPrefix) + "</span> " : "") + headline + "</p>" +
-        (e.belowMin ? '<p class="mdfc-notice">' + ICON.info + "<span>" + esc(fmt(T.minOrderNote, { minOrder: money(C.minOrder) })) + "</span></p>" : "") +
+        (e.belowMin ? '<p class="mdfc-notice">' + ICON.info + "<span>" + esc(fmt(T.minOrderNote, { minOrder: money(C.minOrder) })) + "</span></p>" +
+          '<div class="mdfc-addmore"><p class="mdfc-addmore-text">' + esc(T.minOrderAddPrompt) + "</p>" +
+          '<button type="button" class="mdfc-btn mdfc-btn--outline" data-action="add-room-min">' + ICON.plus + "<span>" + esc(T.minOrderAddButton) + "</span></button></div>" : "") +
       "</div>" +
 
       '<div class="mdfc-card">' +
@@ -635,6 +646,7 @@
     const step = steps()[pos];
     if (step && step.kind === "results") {
       const e = estimate();
+      if (e.belowMin) track("min_order_applied", { total_high_before_floor: e.rawHigh });
       const mix = {};
       e.lines.forEach(function (l) { mix[l.product] = (mix[l.product] || 0) + 1; });
       track("estimate_viewed", {
@@ -743,6 +755,14 @@
       case "back":
         goTo(Math.max(0, state.pos - 1));
         break;
+      case "add-room-min": {
+        track("add_room_from_min_order", {});
+        const r = newRoom();
+        state.rooms.push(r);
+        goTo(0);
+        focusById("mdfc-" + r.id + "-type");
+        break;
+      }
       case "add-room": {
         const r = newRoom();
         state.rooms.push(r);

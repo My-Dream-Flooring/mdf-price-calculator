@@ -53,7 +53,7 @@ The easy way to edit, straight on GitHub:
 |---|---|
 | `wastePercent` | Extra material for cutting and waste. The high end of the estimate includes it. |
 | `depositPerRoom` | Deposit in £ per room. |
-| `minOrder` | If the high estimate is below this, customers see "Our minimum order is £…". |
+| `minOrder` | Minimum order value (£) for the whole order. If the high estimate is below this, the total becomes this figure (see "How the estimate works"). |
 | `termWeeks` | Number of weeks the customer pays over. |
 | `minWeekly` | Lowest weekly payment shown (£). If the maths comes out lower, this figure is shown instead, with no message about it. |
 | `minMonthly` | Lowest monthly payment shown (£). Works the same way as `minWeekly`. |
@@ -107,6 +107,7 @@ Open the demo page after GitHub Pages updates. If the calculator doesn't appear,
 - **Room area:** length × width, or the preset m².
 - **Per room:** low = area × price; high = area × (1 + waste %) × price. Each is rounded to the nearest £5.
 - **Total:** the sum of the rooms' lows and highs.
+- **Minimum order:** if the high total is below `minOrder`, `minOrder` is used as the total for everything: the headline (shown as a single figure, e.g. "£300", with "Our minimum order is £300" underneath), the payments and the pre-fit amount. Each room's line still shows its real estimate. Customers also see "Got another room in mind? Add it and it's still one order", with an "Add a room" button that takes them back to the rooms step with their rooms kept.
 - **Deposit:** `depositPerRoom` × number of rooms, shown separately.
 - **Base weekly:** (high total − deposit) ÷ `termWeeks`.
 - **Weekly:** the higher of base weekly and `minWeekly`, rounded **up** to the nearest 50p.
@@ -131,6 +132,8 @@ Each event is pushed to `window.dataLayer` as `{ event: "<name>", ...params }`, 
 | `payment_toggle` | `payment_period` (`weekly` / `monthly`) | Payment toggle changes |
 | `book_visit_clicked` | `total_high` | "Book my free home visit" is clicked |
 | `calculator_restart` | none | "Start again" is clicked |
+| `min_order_applied` | `total_high_before_floor` | The results screen is shown and the minimum order is applied |
+| `add_room_from_min_order` | none | "Add a room" under the minimum order notice is clicked |
 
 For the Meta pixel, create GTM tags that fire on these dataLayer events (for example, `book_visit_clicked` → Lead).
 

@@ -523,6 +523,9 @@
   border-radius: var(--mdfc-radius-sm);
 }
 #mdf-price-calculator .mdfc-notice { background: #fff5e6; color: #6b3d00; }
+#mdf-price-calculator .mdfc-addmore { padding-top: 6px; }
+#mdf-price-calculator .mdfc-addmore > * + * { margin-top: 10px; }
+#mdf-price-calculator .mdfc-addmore-text { font-size: 15px; color: var(--mdfc-dark); }
 #mdf-price-calculator .mdfc-fitting { background: var(--mdfc-bg); color: var(--mdfc-dark); }
 #mdf-price-calculator .mdfc-notice svg,
 #mdf-price-calculator .mdfc-fitting svg { flex: none; width: 20px; height: 20px; margin-top: 1px; }

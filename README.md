@@ -30,20 +30,21 @@ It's plain JavaScript and CSS with no framework and no build step. It renders st
 
 ```html
 <div id="mdf-price-calculator"></div>
-<link rel="stylesheet" href="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.css?v=7">
-<script src="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.js?v=7" defer></script>
+<link rel="stylesheet" href="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.css?v=8">
+<script src="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.js?v=8" defer></script>
 ```
 
 3. Update the page and check it on your phone.
 
 Notes:
-- **Cache:** GitHub Pages and browsers cache files for a while. After any change, bump `?v=7` to `?v=8` (and so on) in both lines so visitors get the new version straight away.
+- **Cache:** GitHub Pages and browsers cache files for a while. After any change, bump `?v=8` to `?v=9` (and so on) in both lines so visitors get the new version straight away.
 - Use **one calculator per page**. It only looks for the element with `id="mdf-price-calculator"`.
 - Everything the script adds goes inside that `<div>`, including the three.js script and, if the page hasn't already loaded it, the Montserrat font link (weight 400 only).
 - three.js loads from the same place as `price-calculator.js` (`vendor/three.min.js`). If the page already has three.js, that copy is used instead.
 - If WebGL isn't available, the preview shows a swatch with a short message and the price still works.
 - If a caching or optimisation plugin (WP Rocket, Autoptimize, etc.) delays or combines JavaScript, exclude `price-calculator.js` and `three.min.js` from that.
-- **Price bar:** fixed to the bottom of the screen from page load, on every screen size, showing the price for the default room (medium living room, Westminster) straight away. It slides out of the way only while the booking form (the element `bookingUrl` points at, `#mdfc-booking`) is on screen. The calculator adds bottom padding equal to the bar's height so nothing in it is hidden behind the bar.
+- **Price bar:** fixed to the bottom of the screen, on every screen size. It starts hidden and slides up once the top of the calculator scrolls about 70% of the way up the screen, or as soon as the visitor taps or changes anything in the calculator. It slides away again if they scroll back up so the calculator is entirely below the screen, and while the booking form (the element `bookingUrl` points at, `#mdfc-booking`) is on screen. While it's showing, the calculator adds bottom padding equal to the bar's height so nothing is hidden behind it.
+- **Weekly | Monthly switch:** always visible in the price bar, beside the figure. It's a radio group (arrow keys work) and switches the bar figure, the daily line and every range card price.
 - If an Elementor section around the calculator uses a **transform** (some entrance animations and motion effects do), the fixed bar would be pinned to that section instead of the screen. Turn off entrance animation / motion effects on that section.
 - **Phones (calculator under 600px wide):** the 0% interest strip, headline and Nimbus merge into one compact header; the 3D preview is 16:10 (max 240px tall); flooring, room and size choices each sit in one row that scrolls sideways. "Your rooms" appears once a second room is added.
 - The calculator protects itself from theme / Elementor CSS (box-sizing, padding, margins, widths, min-widths). `test-mobile.html` checks this.

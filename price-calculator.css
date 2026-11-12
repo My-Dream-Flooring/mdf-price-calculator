@@ -532,6 +532,48 @@
 #mdf-price-calculator .mdfc-fitting svg { color: var(--mdfc-primary); }
 #mdf-price-calculator .mdfc-fitting--standalone { background: var(--mdfc-white); border: 1px solid var(--mdfc-line); justify-content: flex-start; }
 
+/* 0% interest / no credit checks strips */
+#mdf-price-calculator .mdfc-finance {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 16px;
+  background: #013D3F;
+  color: #ffffff;
+  border-radius: var(--mdfc-radius);
+  text-align: center;
+}
+#mdf-price-calculator .mdfc-finance-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 22px;
+  line-height: 1.25;
+}
+#mdf-price-calculator .mdfc-finance-tick {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #10888c;
+}
+#mdf-price-calculator .mdfc-finance-tick svg { width: 18px; height: 18px; }
+#mdf-price-calculator .mdfc-finance-slim {
+  margin: 0 0 18px;
+  padding: 10px 14px;
+  background: #10888c;
+  color: #ffffff;
+  border-radius: var(--mdfc-radius-sm);
+  font-size: 17px;
+  line-height: 1.35;
+  text-align: center;
+}
 #mdf-price-calculator .mdfc-pay { text-align: center; }
 #mdf-price-calculator .mdfc-pay > * + * { margin-top: 12px; }
 #mdf-price-calculator .mdfc-seg--pay { max-width: 320px; margin-left: auto; margin-right: auto; }
@@ -603,6 +645,7 @@
   #mdf-price-calculator .mdfc-range .mdfc-swatch { width: 100%; }
   #mdf-price-calculator .mdfc-range { justify-content: space-between; }
   #mdf-price-calculator .mdfc-hero-figure { font-size: 42px; }
+  #mdf-price-calculator .mdfc-finance { flex-direction: row; justify-content: center; gap: 32px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

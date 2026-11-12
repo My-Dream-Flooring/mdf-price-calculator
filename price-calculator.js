@@ -25,8 +25,9 @@
    * ========================================================================= */
   const MDF_CONFIG = {
     // Extra material added for cutting and waste, as a percentage.
-    // The HIGH end of every estimate includes this.
-    wastePercent: 10,
+    // The HIGH end of every estimate includes this. At 0, low and high are
+    // the same and customers see a single figure instead of a range.
+    wastePercent: 0,
 
     // Deposit charged per room (£). Shown separately on the results.
     depositPerRoom: 40,
@@ -38,6 +39,11 @@
 
     // Number of weeks the customer pays over.
     termWeeks: 36,
+
+    // "0% interest" style claims. Shown as a strip at the top of step one
+    // (joined with " · ") and above the payment card on the results screen.
+    // Use [] to hide both strips.
+    financeBadge: ["0% interest", "No credit checks"],
 
     // Lowest weekly / monthly payment we show (£). If the maths comes out
     // lower, the customer just sees this figure (no message about it).
@@ -161,6 +167,7 @@
       perWeek: "a week",
       perMonth: "a month",
       overTerm: "over {weeks} weeks",
+      overTermMonthly: "over {months} months",
       afterDeposit: "after your {deposit} deposit",
       breakdownHeading: "Your rooms",
       depositLabel: "Deposit",
@@ -217,6 +224,14 @@
   }
   function area(n) {
     return (Math.round(n * 100) / 100).toLocaleString("en-GB", { maximumFractionDigits: 2 }) + " m²";
+  }
+  // "£X to £Y", or a single "£X" when both ends are the same
+  function priceText(low, high, wrap) {
+    const w = wrap || function (v) { return esc(money(v)); };
+    return low === high ? w(high) : fmt(esc(T.priceRange), { low: w(low), high: w(high) });
+  }
+  function financeItems() {
+    return (Array.isArray(C.financeBadge) ? C.financeBadge : []).filter(hasText);
   }
   function round5(n) { return Math.round(n / 5) * 5; }
   function ceilHalf(n) { return Math.ceil(n * 2 - 1e-9) / 2; }
@@ -538,9 +553,17 @@
   function renderResults() {
     const e = estimate();
     const weekly = state.payment === "weekly";
-    const termTxt = fmt(T.overTerm, { weeks: C.termWeeks });
+    const termTxt = weekly
+      ? fmt(T.overTerm, { weeks: C.termWeeks })
+      : fmt(T.overTermMonthly, { months: Math.ceil((Number(C.termWeeks) || 0) * 12 / 52 - 1e-9) });
+    const fin = financeItems();
+    const finStrip = fin.length
+      ? '<ul class="mdfc-finance" role="list">' + fin.map(function (t) {
+          return '<li class="mdfc-finance-item"><span class="mdfc-finance-tick">' + ICON.check + "</span><span>" + esc(t) + "</span></li>";
+        }).join("") + "</ul>"
+      : "";
     const nw = function (v) { return '<span class="mdfc-nowrap">' + esc(money(v)) + "</span>"; };
-    const headline = e.belowMin ? nw(e.high) : fmt(esc(T.priceRange), { low: nw(e.low), high: nw(e.high) });
+    const headline = e.belowMin ? nw(e.high) : priceText(e.low, e.high, nw);
 
     const lines = e.lines.map(function (l) {
       const rangeTxt = l.skipped
@@ -549,7 +572,7 @@
       return '<li class="mdfc-line"><div class="mdfc-line-main"><span class="mdfc-line-title">' + esc(l.name) + "</span>" +
         '<span class="mdfc-line-meta">' + esc(area(l.area)) + " · " + esc(rangeTxt) + "</span></div>" +
         '<span class="mdfc-line-amount">' + (l.skipped ? esc(T.fromPrefix) + " " : "") +
-        esc(fmt(T.priceRange, { low: money(l.low), high: money(l.high) })) + "</span></li>";
+        priceText(l.low, l.high) + "</span></li>";
     }).join("");
 
     const book = hasText(C.bookingUrl)
@@ -578,6 +601,7 @@
         "</ul>" +
       "</div>" +
 
+      finStrip +
       '<div class="mdfc-card mdfc-pay">' +
         '<div class="mdfc-seg mdfc-seg--pay" role="radiogroup" aria-label="' + esc(T.paymentLabel) + '">' +
           payOpt("weekly", T.weekly) + payOpt("monthly", T.monthly) +
@@ -613,7 +637,10 @@
     else if (step.kind === "product") body = renderProductStep(step.i);
     else if (step.kind === "range") body = renderRangeStep(step.i);
     else body = renderResults();
-    view.innerHTML = renderTop(step) + '<div class="mdfc-step mdfc-step--' + step.kind + '">' + body + "</div>";
+    const fin = financeItems();
+    const topStrip = step.kind === "rooms" && fin.length
+      ? '<p class="mdfc-finance-slim">' + esc(fin.join(" · ")) + "</p>" : "";
+    view.innerHTML = topStrip + renderTop(step) + '<div class="mdfc-step mdfc-step--' + step.kind + '">' + body + "</div>";
   }
 
   function rerenderKeepFocus() {

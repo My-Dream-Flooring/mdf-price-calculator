@@ -51,10 +51,11 @@ The easy way to edit, straight on GitHub:
 
 | Setting | Meaning |
 |---|---|
-| `wastePercent` | Extra material for cutting and waste. The high end of the estimate includes it. |
+| `wastePercent` | Extra material for cutting and waste. The high end of the estimate includes it. Currently `0`, so customers see a single figure instead of a range. Raise it (e.g. `10`) to show a range again. |
+| `financeBadge` | The finance claims, e.g. `["0% interest", "No credit checks"]`. Shown as a strip at the top of the first step and above the payment card on the results screen. Use `[]` to hide both strips. |
 | `depositPerRoom` | Deposit in £ per room. |
 | `minOrder` | Minimum order value (£) for the whole order. If the high estimate is below this, the total becomes this figure (see "How the estimate works"). |
-| `termWeeks` | Number of weeks the customer pays over. |
+| `termWeeks` | Number of weeks the customer pays over. Monthly payments show "over N months", rounded up (36 weeks = 9 months). |
 | `minWeekly` | Lowest weekly payment shown (£). If the maths comes out lower, this figure is shown instead, with no message about it. |
 | `minMonthly` | Lowest monthly payment shown (£). Works the same way as `minWeekly`. |
 | `prefitPercent` | The "Paid before fitting" amount, as a percentage of the high total. It includes the deposit and is never less than the deposit. |
@@ -107,6 +108,7 @@ Open the demo page after GitHub Pages updates. If the calculator doesn't appear,
 - **Room area:** length × width, or the preset m².
 - **Per room:** low = area × price; high = area × (1 + waste %) × price. Each is rounded to the nearest £5.
 - **Total:** the sum of the rooms' lows and highs.
+- **Single figure:** when low and high are the same (as with `wastePercent: 0`), a single figure is shown instead of a range, in the headline and the room lines. Deposit, pre-fit and payments all use that total.
 - **Minimum order:** if the high total is below `minOrder`, `minOrder` is used as the total for everything: the headline (shown as a single figure, e.g. "£300", with "Our minimum order is £300" underneath), the payments and the pre-fit amount. Each room's line still shows its real estimate. Customers also see "Got another room in mind? Add it and it's still one order", with an "Add a room" button that takes them back to the rooms step with their rooms kept.
 - **Deposit:** `depositPerRoom` × number of rooms, shown separately.
 - **Base weekly:** (high total − deposit) ÷ `termWeeks`.

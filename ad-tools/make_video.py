@@ -428,10 +428,10 @@ def main():
         bp[yoff:yoff + SH] = plate
         if yoff > 0:
             top = np.repeat(plate[:1], yoff, 0)
-            bp[:yoff] = cv2.GaussianBlur(top, (0, 0), sigmaX=6, sigmaY=0.1)
+            bp[:yoff] = cv2.GaussianBlur(top, (0, 0), sigmaX=60, sigmaY=0.1)
         if yoff + SH < H_:
             n_ = H_ - yoff - SH
-            bp[yoff + SH:] = cv2.GaussianBlur(np.repeat(plate[-1:], n_, 0), (0, 0), sigmaX=6, sigmaY=0.1)
+            bp[yoff + SH:] = cv2.GaussianBlur(np.repeat(plate[-1:], n_, 0), (0, 0), sigmaX=60, sigmaY=0.1)
         if yoff > 0 or yoff + SH < H_:
             # soften the joins
             for yj in (yoff, yoff + SH):

@@ -212,6 +212,7 @@
     // All wording shown to customers. {curly} words are filled in automatically.
     copy: {
       title: "What will my new floor cost?",
+      headSub: "Pick your floor and see your weekly price.",
       guideWave: "Pick your floor and I'll work out your weekly price. Takes about 30 seconds.",
       guideThink: "Just setting up your room...",
       guideCelebrateOne: "Your new {room}'s sorted.",
@@ -477,10 +478,6 @@
   }
   function perText() { return state.payment === "weekly" ? T.perWeek : T.perMonth; }
   function rangeCostText(pk, rangeId) { return fmt(T.rangeCost, { price: money(paymentWith(pk, rangeId)), per: perText() }); }
-  // Card price stacked as "£15" over "a week" so the card stays narrow
-  function rangeCostHtml(pk, rangeId) {
-    return '<span class="mdfc-ppm-amt">' + esc(money(paymentWith(pk, rangeId))) + '</span><span class="mdfc-ppm-per">' + esc(perText()) + "</span>";
-  }
   function productFromText(pk) {
     const lowest = visibleRanges(pk).reduce(function (m, rg) { return Math.min(m, paymentWith(pk, rg.id)); }, Infinity);
     return fmt(T.productFrom, { price: money(lowest), per: perText() });
@@ -500,10 +497,7 @@
   // Refresh every range/product figure in place (keeps focus, e.g. while sliding)
   function updateCosts() {
     const r = activeRoom();
-    app.querySelectorAll("[data-cost-range]").forEach(function (el) {
-      el.innerHTML = rangeCostHtml(r.product, el.getAttribute("data-cost-range"));
-      el.setAttribute("aria-label", rangeCostText(r.product, el.getAttribute("data-cost-range")));
-    });
+    app.querySelectorAll("[data-cost-range]").forEach(function (el) { el.textContent = rangeCostText(r.product, el.getAttribute("data-cost-range")); });
     app.querySelectorAll("[data-cost-product]").forEach(function (el) { el.textContent = productFromText(el.getAttribute("data-cost-product")); });
   }
 
@@ -544,9 +538,22 @@
 
   function renderShell() {
     const fin = financeItems();
+    const wave = (C.nimbus || {}).wave || {};
+    const head = assetPair(wave.nimbusUrl, wave.local);
+    const head2 = assetPair(wave.nimbusUrl2x, wave.local2x);
     app.innerHTML =
       (fin.length ? '<p class="mdfc-finance-slim">' + esc(fin.join(" · ")) + "</p>" : "") +
-      '<h2 class="mdfc-title">' + esc(T.title) + "</h2>" +
+      // Header. On phones (under 600px) it becomes one compact block: Nimbus,
+      // a smaller headline and one line under it.
+      '<div class="mdfc-head">' +
+        (head.src ? '<img class="mdfc-head-nimbus" src="' + esc(head.src) + '"' +
+          (head2.src ? ' srcset="' + esc(head.src) + " 1x, " + esc(head2.src) + ' 2x"' : "") +
+          (head.fallback ? ' data-fallback="' + esc(head.fallback) + '"' +
+            (head2.fallback ? ' data-fallback-srcset="' + esc(head.fallback) + " 1x, " + esc(head2.fallback) + ' 2x"' : "") : "") +
+          ' alt="" decoding="async">' : "") +
+        '<div class="mdfc-head-text"><h2 class="mdfc-title">' + esc(T.title) + "</h2>" +
+          '<p class="mdfc-head-sub">' + esc(T.headSub) + "</p></div>" +
+      "</div>" +
       '<div class="mdfc-main">' +
         '<div class="mdfc-stage-col">' +
           '<div class="mdfc-stage" role="img" aria-label="' + esc(T.stageAria) + '">' +
@@ -579,58 +586,91 @@
       : '<span class="mdfc-thumb-empty" role="img" aria-label="' + esc(fmt(T.noImage, { range: rg.name })) + '">' + ICON.swatch + "</span>";
   }
 
+  // Rows of choices that scroll sideways on phones keep their scroll position
+  // across re-renders, and show a fade on the right while there's more to see.
+  function rememberScroll() {
+    const pos = {};
+    panel.querySelectorAll("[data-scroll-key]").forEach(function (el) { pos[el.getAttribute("data-scroll-key")] = el.scrollLeft; });
+    return pos;
+  }
+  function restoreScroll(pos) {
+    panel.querySelectorAll("[data-scroll-key]").forEach(function (el) {
+      const k = el.getAttribute("data-scroll-key");
+      if (pos[k]) el.scrollLeft = pos[k];
+    });
+    updateScrollers();
+  }
+  function updateScrollers() {
+    if (!panel) return;
+    panel.querySelectorAll(".mdfc-scroller").forEach(function (el) {
+      el.classList.toggle("has-more", el.scrollWidth - el.clientWidth - el.scrollLeft > 4);
+    });
+  }
+
   function renderPanel() {
     const r = activeRoom();
     const e = estimate();
     const isStairs = r.type === STAIRS;
     const many = state.rooms.length > 1;
-
-    // Your rooms
-    const tabs = state.rooms.map(function (room, i) {
-      const on = i === state.active;
-      const line = e.lines[i];
-      return '<li class="mdfc-roomtab' + (on ? " is-on" : "") + '">' +
-        '<button type="button" class="mdfc-roomtab-btn" id="mdfc-tab-' + room.id + '" data-action="select-room" data-i="' + i + '" aria-pressed="' + on + '">' +
-          '<span class="mdfc-roomtab-name">' + esc(fmt(T.roomTab, { n: i + 1, room: roomName(i) })) + "</span>" +
-          '<span class="mdfc-roomtab-meta">' + roomMeta(line) + "</span>" +
-          (line.range && hasText(line.range.shownAs) ? '<span class="mdfc-roomtab-shown">' + esc(fmt(T.roomShownIn, { colour: line.range.shownAs })) + "</span>" : "") +
-        "</button>" +
-        (many ? '<button type="button" class="mdfc-roomtab-x" data-action="remove-room" data-i="' + i + '" aria-label="' +
-          esc(fmt(T.removeRoom, { room: roomName(i) })) + '">' + ICON.close + "</button>" : "") +
-        "</li>";
-    }).join("");
     const canAdd = state.rooms.length < (Number(C.maxRooms) || 10);
     const showPoint = e.belowMin && canAdd;
     if (!showPoint) guideGone("point");
-    let html = guideHtml("wave", "wave", T.guideWave) +
-      '<div class="mdfc-group">' +
-      '<h3 class="mdfc-h">' + esc(T.roomsHeading) + "</h3>" +
-      '<ul class="mdfc-roomtabs" role="list">' + tabs + "</ul>" +
-      (showPoint
-        ? '<div class="mdfc-minorder">' + guideHtml("point", "point", T.minOrderAddPrompt) +
-          '<p class="mdfc-minorder-note">' + esc(fmt(T.minOrderNote, { minOrder: money(C.minOrder) })) + ".</p>" +
-          '<button type="button" class="mdfc-btn mdfc-btn--outline" id="mdfc-addroom-min" data-action="add-room-min">' + ICON.plus + "<span>" + esc(T.minOrderAddButton) + "</span></button></div>"
-        : (canAdd ? '<button type="button" class="mdfc-addroom" id="mdfc-addroom" data-action="add-room">' + ICON.plus + "<span>" + esc(T.addRoom) + "</span></button>" : "")) +
+    const scroll = rememberScroll();
+
+    let html = '<div class="mdfc-wave">' + guideHtml("wave", "wave", T.guideWave) + "</div>";
+
+    // Your rooms: only once there's more than one
+    if (many) {
+      html += '<div class="mdfc-group"><h3 class="mdfc-h">' + esc(T.roomsHeading) + "</h3>" +
+        '<ul class="mdfc-roomtabs" role="list">' +
+        state.rooms.map(function (room, i) {
+          const on = i === state.active;
+          const line = e.lines[i];
+          return '<li class="mdfc-roomtab' + (on ? " is-on" : "") + '">' +
+            '<button type="button" class="mdfc-roomtab-btn" id="mdfc-tab-' + room.id + '" data-action="select-room" data-i="' + i + '" aria-pressed="' + on + '">' +
+              '<span class="mdfc-roomtab-name">' + esc(fmt(T.roomTab, { n: i + 1, room: roomName(i) })) + "</span>" +
+              '<span class="mdfc-roomtab-meta">' + roomMeta(line) + "</span>" +
+              (line.range && hasText(line.range.shownAs) ? '<span class="mdfc-roomtab-shown">' + esc(fmt(T.roomShownIn, { colour: line.range.shownAs })) + "</span>" : "") +
+            "</button>" +
+            '<button type="button" class="mdfc-roomtab-x" data-action="remove-room" data-i="' + i + '" aria-label="' +
+              esc(fmt(T.removeRoom, { room: roomName(i) })) + '">' + ICON.close + "</button>" +
+            "</li>";
+        }).join("") + "</ul></div>";
+    }
+
+    // Pick your flooring
+    const pks = productKeys(isStairs);
+    html += '<div class="mdfc-group"><h3 class="mdfc-h" id="mdfc-prod-h">' + esc(T.flooringHeading) + "</h3>" +
+      '<div class="mdfc-products mdfc-scroller" data-scroll-key="products" role="group" aria-labelledby="mdfc-prod-h">' +
+      pks.map(function (pk) {
+        const first = visibleRanges(pk)[0];
+        const sw = first ? assetUrl(first.thumbUrl, first.thumbLocal) : "";
+        return '<button type="button" class="mdfc-product" id="mdfc-prod-' + esc(pk) + '" data-action="product" data-product="' + esc(pk) + '" aria-pressed="' + (r.product === pk) + '">' +
+          '<span class="mdfc-product-swatch">' + (sw ? '<img ' + imgSrcAttrs(first.thumbUrl, first.thumbLocal) + ' alt="" loading="lazy">' : "") + "</span>" +
+          '<span class="mdfc-product-text"><span class="mdfc-product-name">' + esc(productLabel(pk)) + "</span>" +
+          '<span class="mdfc-product-from" data-cost-product="' + esc(pk) + '">' + esc(productFromText(pk)) + "</span></span></button>";
+      }).join("") + "</div>" +
+      (isStairs && pks.length === 1 && hasText(T.stairsOnly) ? '<p class="mdfc-help">' + esc(T.stairsOnly) + "</p>" : "") +
       "</div>";
 
     // Which room?
     html += '<div class="mdfc-group"><h3 class="mdfc-h" id="mdfc-type-h">' + esc(T.roomTypeHeading) + "</h3>" +
-      '<div class="mdfc-pills" role="group" aria-labelledby="mdfc-type-h">' +
+      '<div class="mdfc-pills mdfc-scroller" data-scroll-key="types" role="group" aria-labelledby="mdfc-type-h">' +
       roomTypes().map(function (t, i) {
         return '<button type="button" class="mdfc-pill" id="mdfc-type-' + i + '" data-action="room-type" data-type="' + esc(t) + '" aria-pressed="' + (r.type === t) + '">' + esc(typeLabel(t)) + "</button>";
-      }).join("") + "</div>";
+      }).join("") + "</div></div>";
 
     // How big is it?
-    html += '<h3 class="mdfc-h mdfc-h--gap" id="mdfc-size-h">' + esc(T.sizeHeading) + "</h3>";
+    html += '<div class="mdfc-group"><h3 class="mdfc-h" id="mdfc-size-h">' + esc(T.sizeHeading) + "</h3>";
     if (isStairs) {
-      html += '<div class="mdfc-sizes" role="group" aria-labelledby="mdfc-size-h">' +
+      html += '<div class="mdfc-sizes mdfc-scroller" data-scroll-key="sizes" role="group" aria-labelledby="mdfc-size-h">' +
         sizeBtn("mdfc-st-straight", "stairs", "straight", T.stairsStraight, fmt(T.aboutM2, { m2: C.stairs.straight }), r.stairs === "straight") +
         sizeBtn("mdfc-st-turn", "stairs", "turn", T.stairsTurn, fmt(T.aboutM2, { m2: C.stairs.turn }), r.stairs === "turn") +
         sizeBtn("mdfc-st-landing", "landing", "", r.landing ? T.stairsLandingOn : T.stairsLandingAdd, "+" + C.stairs.landing + " m²", r.landing) +
         "</div>";
     } else {
       html += '<p class="mdfc-help">' + esc(T.sizeHelp) + "</p>" +
-        '<div class="mdfc-sizes" role="group" aria-labelledby="mdfc-size-h">' +
+        '<div class="mdfc-sizes mdfc-scroller" data-scroll-key="sizes" role="group" aria-labelledby="mdfc-size-h">' +
         presetSizes(r.type).map(function (s) {
           return sizeBtn("mdfc-size-" + s.key, "size", s.key, T.sizeNames[s.key] || s.key, fmt(T.aboutM2, { m2: Math.round(s.L * s.W) }), r.size === s.key);
         }).join("") + "</div>" +
@@ -642,49 +682,44 @@
     }
     html += "</div>";
 
-    // Pick your flooring
-    const pks = productKeys(isStairs);
-    html += '<div class="mdfc-group"><h3 class="mdfc-h" id="mdfc-prod-h">' + esc(T.flooringHeading) + "</h3>" +
-      '<div class="mdfc-products" role="group" aria-labelledby="mdfc-prod-h">' +
-      pks.map(function (pk) {
-        const first = visibleRanges(pk)[0];
-        const sw = first ? assetUrl(first.thumbUrl, first.thumbLocal) : "";
-        return '<button type="button" class="mdfc-product" id="mdfc-prod-' + esc(pk) + '" data-action="product" data-product="' + esc(pk) + '" aria-pressed="' + (r.product === pk) + '">' +
-          '<span class="mdfc-product-swatch">' + (sw ? '<img ' + imgSrcAttrs(first.thumbUrl, first.thumbLocal) + ' alt="" loading="lazy">' : "") + "</span>" +
-          '<span class="mdfc-product-name">' + esc(productLabel(pk)) + "</span>" +
-          '<span class="mdfc-product-from" data-cost-product="' + esc(pk) + '">' + esc(productFromText(pk)) + "</span></button>";
-      }).join("") + "</div>" +
-      (isStairs && pks.length === 1 && hasText(T.stairsOnly) ? '<p class="mdfc-help">' + esc(T.stairsOnly) + "</p>" : "");
-
-    // Ranges
+    // Ranges: each card is a radio option. Line 1: name and weekly price;
+    // line 2: tagline; line 3: "Shown in …" and "Explore the full range".
     const p = C.products[r.product] || {};
-    html += '<h3 class="mdfc-h mdfc-h--gap">' + esc(fmt(T.rangeHeading, { product: productLabel(r.product).toLowerCase() })) + "</h3>" +
-      '<ul class="mdfc-ranges" role="list">' +
+    html += '<div class="mdfc-group"><h3 class="mdfc-h" id="mdfc-range-h">' + esc(fmt(T.rangeHeading, { product: productLabel(r.product).toLowerCase() })) + "</h3>" +
+      '<ul class="mdfc-ranges" role="radiogroup" aria-labelledby="mdfc-range-h">' +
       visibleRanges(r.product).map(function (rg) {
         const on = r.range === rg.id;
         const link = hasText(rg.coloursUrl);
-        const bigPair = assetPair(rg.textureUrl, rg.textureLocal).src ? assetPair(rg.textureUrl, rg.textureLocal) : assetPair(rg.thumbUrl, rg.thumbLocal);
-        const big = !link && rg.coloursUrl === null ? bigPair.src : "";
-        return '<li class="mdfc-card' + (on ? " is-on" : "") + (link || big ? "" : " is-solo") + '">' +
-          '<button type="button" class="mdfc-range" id="mdfc-range-' + esc(rg.id) + '" data-action="range" data-range="' + esc(rg.id) + '" aria-pressed="' + on + '">' +
+        const shown = hasText(rg.shownAs) ? fmt(T.shownIn, { colour: rg.shownAs }) : "";
+        return '<li class="mdfc-card' + (on ? " is-on" : "") + '">' +
+          '<label class="mdfc-range' + (on ? " is-on" : "") + '" for="mdfc-range-' + esc(rg.id) + '">' +
+            '<input class="mdfc-visually-hidden" type="radio" name="mdfc-range" id="mdfc-range-' + esc(rg.id) + '" value="' + esc(rg.id) + '" data-field="range"' + (on ? " checked" : "") + ">" +
             '<span class="mdfc-thumb">' + thumbHtml(rg) + "</span>" +
-            '<span class="mdfc-range-text"><span class="mdfc-range-name">' + esc(rg.name) + "</span>" +
-            (hasText(rg.tagline) ? '<span class="mdfc-range-sub">' + esc(rg.tagline) + "</span>" : "") +
-            (hasText(rg.shownAs) ? '<span class="mdfc-shown">' + esc(fmt(T.shownIn, { colour: rg.shownAs })) + "</span>" : "") + "</span>" +
-            '<span class="mdfc-range-ppm" data-cost-range="' + esc(rg.id) + '" aria-label="' + esc(rangeCostText(r.product, rg.id)) + '">' + rangeCostHtml(r.product, rg.id) + "</span>" +
-          "</button>" +
-          (link ? '<a class="mdfc-colours" href="' + esc(rg.coloursUrl) + '" target="_blank" rel="noopener" data-action="range-link" data-range="' + esc(rg.id) + '">' +
-            "<span>" + esc(T.seeColours) + '<span class="mdfc-visually-hidden"> ' + esc(rg.name + " " + T.newTab) + "</span></span>" + ICON.arrow + "</a>" : "") +
-          (big ? '<button type="button" class="mdfc-colours" data-action="lightbox" data-src="' + esc(big) + '" data-fallback="' + esc(bigPair.fallback) + '" data-alt="' + esc(rg.name + " swatch") + '">' +
-            "<span>" + esc(T.viewLarger) + "</span>" + ICON.arrow + "</button>" : "") +
-          "</li>";
+            '<span class="mdfc-range-body">' +
+              '<span class="mdfc-range-l1"><span class="mdfc-range-name">' + esc(rg.name) + "</span>" +
+                '<span class="mdfc-range-ppm" data-cost-range="' + esc(rg.id) + '">' + esc(rangeCostText(r.product, rg.id)) + "</span></span>" +
+              (hasText(rg.tagline) ? '<span class="mdfc-range-sub">' + esc(rg.tagline) + "</span>" : "") +
+              (shown || link ? '<span class="mdfc-range-l3">' +
+                (shown ? '<span class="mdfc-shown" title="' + esc(shown) + '">' + esc(shown) + "</span>" : "") +
+                (link ? '<a class="mdfc-colours" href="' + esc(rg.coloursUrl) + '" target="_blank" rel="noopener" data-action="range-link" data-range="' + esc(rg.id) + '">' +
+                  esc(T.seeColours) + '<span class="mdfc-visually-hidden"> ' + esc(rg.name + " " + T.newTab) + "</span></a>" : "") +
+              "</span>" : "") +
+            "</span>" +
+          "</label></li>";
       }).join("") + "</ul>" +
+      // Add another room: directly under the range cards
+      (showPoint
+        ? '<div class="mdfc-minorder">' + guideHtml("point", "point", T.minOrderAddPrompt) +
+          '<p class="mdfc-minorder-note">' + esc(fmt(T.minOrderNote, { minOrder: money(C.minOrder) })) + ".</p>" +
+          '<button type="button" class="mdfc-btn mdfc-btn--outline" id="mdfc-addroom-min" data-action="add-room-min">' + ICON.plus + "<span>" + esc(T.minOrderAddButton) + "</span></button></div>"
+        : (canAdd ? '<button type="button" class="mdfc-addroom" id="mdfc-addroom" data-action="add-room">' + ICON.plus + "<span>" + esc(T.addRoom) + "</span></button>" : "")) +
       (hasText(p.includedNote) ? '<p class="mdfc-included">' + esc(p.includedNote) + "</p>" : "") +
       (hasText(p.browseUrl) && hasText(p.browseLabel) ? '<a class="mdfc-browse" href="' + esc(p.browseUrl) + '" target="_blank" rel="noopener">' +
         esc(p.browseLabel) + '<span class="mdfc-visually-hidden"> ' + esc(T.newTab) + "</span></a>" : "") +
       "</div>";
 
     panel.innerHTML = html;
+    restoreScroll(scroll);
 
     function sizeBtn(id, action, val, title, sub, on) {
       return '<button type="button" class="mdfc-sizebtn" id="' + id + '" data-action="' + action + '" data-val="' + val + '" aria-pressed="' + on + '">' +
@@ -962,11 +997,6 @@
         renderAll();
         break;
       }
-      case "range":
-        r.range = el.getAttribute("data-range");
-        track("range_selected", { product: r.product, range: r.range });
-        renderAll();
-        break;
       case "range-link":
         track("range_link_clicked", { range: el.getAttribute("data-range") });
         break;
@@ -1022,6 +1052,14 @@
     const f = el.getAttribute && el.getAttribute("data-field");
     if (f === "len" || f === "wid") {
       if (!sliderTracked) { sliderTracked = true; track("size_selected", { size_method: "exact" }); }
+      return;
+    }
+    if (f === "range") {
+      markStarted();
+      const r = activeRoom();
+      r.range = el.value;
+      track("range_selected", { product: r.product, range: r.range });
+      renderAll(el.id);
       return;
     }
     if (f !== "payment") return;
@@ -1088,7 +1126,7 @@
       img.parentNode.removeChild(img);
       return;
     }
-    if (img.closest(".mdfc-product-swatch")) { img.parentNode.removeChild(img); return; }
+    if (img.closest(".mdfc-product-swatch") || img.classList.contains("mdfc-head-nimbus")) { img.parentNode.removeChild(img); return; }
     const holder = img.closest(".mdfc-thumb");
     if (holder) holder.innerHTML = '<span class="mdfc-thumb-empty" role="img" aria-label="' + esc(img.alt || "") + '">' + ICON.swatch + "</span>";
   }
@@ -1435,6 +1473,27 @@
     } catch (e) { /* the font is a nice-to-have */ }
   }
 
+  /* ---------- Fixed price bar ----------
+   * Pinned to the bottom of the screen from page load. The calculator gets
+   * bottom padding equal to the bar's height so nothing sits behind it. The
+   * bar slides away only while the booking form (bookingUrl "#id") is on screen. */
+  function fixPriceBar() {
+    const pad = function () { app.style.paddingBottom = (bar.offsetHeight + 16) + "px"; };
+    try { new ResizeObserver(pad).observe(bar); } catch (e) { window.addEventListener("resize", pad); }
+    pad();
+    const watchForm = function () {
+      const href = hasText(C.bookingUrl) ? C.bookingUrl : "";
+      if (href.charAt(0) !== "#" || href.length < 2) return true;
+      let form = null;
+      try { form = document.getElementById(decodeURIComponent(href.slice(1))); } catch (e) { form = null; }
+      if (!form || !("IntersectionObserver" in window)) return false;
+      new IntersectionObserver(function (en) { bar.classList.toggle("is-away", en[0].isIntersecting); }).observe(form);
+      return true;
+    };
+    // The form may be added to the page after the calculator; try again once it's loaded
+    if (!watchForm()) window.addEventListener("load", watchForm);
+  }
+
   /* ---------- Boot ---------- */
   function init() {
     try {
@@ -1448,8 +1507,14 @@
       app.className = "mdfc-app";
       root.appendChild(app);
       renderShell();
-      // Two columns when the calculator itself is wide (not the screen)
-      const setWide = function () { app.classList.toggle("is-wide", root.clientWidth >= 820); };
+      // Layout follows the calculator's own width (not the screen):
+      // two columns from 820px, compact phone layout under 600px.
+      const setWide = function () {
+        const w = root.clientWidth;
+        app.classList.toggle("is-wide", w >= 820);
+        app.classList.toggle("is-narrow", w < 600);
+        updateScrollers();
+      };
       try { new ResizeObserver(setWide).observe(root); } catch (e) { window.addEventListener("resize", setWide); }
       setWide();
       root.addEventListener("click", onClick);
@@ -1457,8 +1522,10 @@
       root.addEventListener("change", onChange);
       root.addEventListener("keydown", onKeydown);
       root.addEventListener("error", onImgError, true);
+      root.addEventListener("scroll", function (ev) { if (ev.target.classList && ev.target.classList.contains("mdfc-scroller")) updateScrollers(); }, true);
       renderAll();
       scene3d.load();
+      fixPriceBar();
     } catch (e) {
       if (window.console && console.warn) console.warn("[MDF calculator]", e);
     }

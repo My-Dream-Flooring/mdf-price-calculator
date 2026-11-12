@@ -11,6 +11,7 @@ It's plain JavaScript and CSS with no framework and no build step. It renders st
 | `index.html` | Demo/test page. |
 | `textures/` | Seamless floor tiles (1024px) and 160px thumbnails used by the demo, and on the live site until the media-library URLs are filled in. |
 | `textures/source/` | The original product photos the tiles were made from. |
+| `images/` | Nimbus guide images (WebP with transparency, 1x and 2x), made from `images/source/` by `tools/make_nimbus.py`. |
 | `tools/make_textures.py` | Rebuilds the tiles and thumbnails from `textures/source/` (Python 3 with Pillow and numpy). |
 | `vendor/three.min.js` | three.js r128 (MIT licence), used for the 3D preview. |
 | `reference/` | The approved prototype. |
@@ -27,14 +28,14 @@ It's plain JavaScript and CSS with no framework and no build step. It renders st
 
 ```html
 <div id="mdf-price-calculator"></div>
-<link rel="stylesheet" href="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.css?v=4">
-<script src="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.js?v=4" defer></script>
+<link rel="stylesheet" href="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.css?v=5">
+<script src="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.js?v=5" defer></script>
 ```
 
 3. Update the page and check it on your phone.
 
 Notes:
-- **Cache:** GitHub Pages and browsers cache files for a while. After any change, bump `?v=4` to `?v=5` (and so on) in both lines so visitors get the new version straight away.
+- **Cache:** GitHub Pages and browsers cache files for a while. After any change, bump `?v=5` to `?v=6` (and so on) in both lines so visitors get the new version straight away.
 - Use **one calculator per page**. It only looks for the element with `id="mdf-price-calculator"`.
 - Everything the script adds goes inside that `<div>`, including the three.js script and, if the page hasn't already loaded it, the Montserrat font link (weight 400 only).
 - three.js loads from the same place as `price-calculator.js` (`vendor/three.min.js`). If the page already has three.js, that copy is used instead.
@@ -62,6 +63,19 @@ Upload these from `textures/` and paste each file's URL into the matching range 
 | Sandringham Chile | `sandringham.jpg` | `sandringham-thumb.jpg` |
 
 If a range has no texture at all, it shows a plain colour (`previewColour`) in the 3D preview with "Colour preview only for this range", and a placeholder swatch on its card.
+
+### Nimbus images to upload
+
+Upload these from `images/` and paste each URL into `MDF_CONFIG.nimbus` (`nimbusUrl` for the 1x file, `nimbusUrl2x` for the @2x file). Until then the repo copies are used.
+
+| Role | Where Nimbus appears | `nimbusUrl` | `nimbusUrl2x` |
+|---|---|---|---|
+| wave | Top of the controls: "Pick your floor and I'll work out your weekly price…" | `nimbus-wave.webp` | `nimbus-wave@2x.webp` |
+| think | Centre of the 3D preview while it loads | `nimbus-think.webp` | `nimbus-think@2x.webp` |
+| point | Minimum order message | `nimbus-point.webp` | `nimbus-point@2x.webp` |
+| celebrate | Price bar (inside Details on phones) | `nimbus-celebrate.webp` | `nimbus-celebrate@2x.webp` |
+
+If a Nimbus image can't load, the speech bubble shows on its own. To change which image is used for a role, edit `PICKS` in `tools/make_nimbus.py` and run `python3 tools/make_nimbus.py`.
 
 ### Example colours
 
@@ -118,7 +132,9 @@ The easy way to edit, straight on GitHub:
 | `defaultRoom` / `defaultProduct` | What the calculator starts on. |
 | `sizeLimits` | Range of the "I know my measurements" sliders, in metres. |
 | `comparisonsWeekly` / `comparisonsMonthly` | The everyday comparison after the daily price, e.g. "That's £2.14 a day · less than four coffees on the go". Each entry applies when the weekly (or monthly) payment is at or below `max`; the first match wins and nothing shows above the last entry. The daily figure is weekly ÷ 7, or monthly × 12 ÷ 365. Use `[]` to turn one off. |
-| `copy` | Every piece of text customers see. |
+| `displayFont` | Font for headings, range names and the big weekly/monthly figure. Default `'Tan Nimbus', 'Montserrat', sans-serif`. The live site already loads Tan Nimbus; the calculator doesn't load it, so the demo shows Montserrat. |
+| `nimbus` | The Nimbus guide images (see "Nimbus images to upload"). |
+| `copy` | Every piece of text customers see, including Nimbus's speech bubbles (`guideWave`, `guideThink`, `minOrderAddPrompt`, `guideCelebrateOne` / `Stairs` / `Many`). |
 
 Each range looks like this:
 

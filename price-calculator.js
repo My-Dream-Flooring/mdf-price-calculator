@@ -49,6 +49,20 @@
     prefitPercent: 20,
     showPrefit: true,
 
+    // Font for headings, range names and the big weekly/monthly figure. The
+    // live site already loads Tan Nimbus; elsewhere it falls back to Montserrat.
+    displayFont: "'Tan Nimbus', 'Montserrat', sans-serif",
+
+    // Nimbus, the guide character. nimbusUrl / nimbusUrl2x are the images in
+    // the WordPress media library (live site); local / local2x are the copies
+    // in this repo, used elsewhere and while the URLs are TODO.
+    nimbus: {
+      wave: { nimbusUrl: "TODO", nimbusUrl2x: "TODO", local: "images/nimbus-wave.webp", local2x: "images/nimbus-wave@2x.webp" },
+      think: { nimbusUrl: "TODO", nimbusUrl2x: "TODO", local: "images/nimbus-think.webp", local2x: "images/nimbus-think@2x.webp" },
+      point: { nimbusUrl: "TODO", nimbusUrl2x: "TODO", local: "images/nimbus-point.webp", local2x: "images/nimbus-point@2x.webp" },
+      celebrate: { nimbusUrl: "TODO", nimbusUrl2x: "TODO", local: "images/nimbus-celebrate.webp", local2x: "images/nimbus-celebrate@2x.webp" }
+    },
+
     // Finance claims. Shown as a strip at the top and as chips in the price
     // bar. Use [] to hide both.
     financeBadge: ["0% interest", "No credit checks"],
@@ -175,6 +189,11 @@
     // All wording shown to customers. {curly} words are filled in automatically.
     copy: {
       title: "What will my new floor cost?",
+      guideWave: "Pick your floor and I'll work out your weekly price. Takes about 30 seconds.",
+      guideThink: "Just setting up your room...",
+      guideCelebrateOne: "Your new {room}'s sorted.",
+      guideCelebrateStairs: "Your new stairs are sorted.",
+      guideCelebrateMany: "Your new floors are sorted.",
       roomsHeading: "Your rooms",
       roomTab: "{n}. {room}",
       addRoom: "Add another room",
@@ -224,7 +243,7 @@
       supplyLabel: "Estimated supply cost {total}",
       priceRange: "{low} to {high}",
       minOrderNote: "Our minimum order is {minOrder}",
-      minOrderAddPrompt: "Got another room in mind? Add it and it's still one order",
+      minOrderAddPrompt: "Got another room in mind? Add it and it's still one order.",
       minOrderAddButton: "Add a room",
       depositLine: "{deposit} deposit",
       prefitLine: "{prefit} paid before fitting",
@@ -424,6 +443,10 @@
   }
   function perText() { return state.payment === "weekly" ? T.perWeek : T.perMonth; }
   function rangeCostText(pk, rangeId) { return fmt(T.rangeCost, { price: money(paymentWith(pk, rangeId)), per: perText() }); }
+  // Card price stacked as "£15" over "a week" so the card stays narrow
+  function rangeCostHtml(pk, rangeId) {
+    return '<span class="mdfc-ppm-amt">' + esc(money(paymentWith(pk, rangeId))) + '</span><span class="mdfc-ppm-per">' + esc(perText()) + "</span>";
+  }
   function productFromText(pk) {
     const lowest = visibleRanges(pk).reduce(function (m, rg) { return Math.min(m, paymentWith(pk, rg.id)); }, Infinity);
     return fmt(T.productFrom, { price: money(lowest), per: perText() });
@@ -443,7 +466,10 @@
   // Refresh every range/product figure in place (keeps focus, e.g. while sliding)
   function updateCosts() {
     const r = activeRoom();
-    app.querySelectorAll("[data-cost-range]").forEach(function (el) { el.textContent = rangeCostText(r.product, el.getAttribute("data-cost-range")); });
+    app.querySelectorAll("[data-cost-range]").forEach(function (el) {
+      el.innerHTML = rangeCostHtml(r.product, el.getAttribute("data-cost-range"));
+      el.setAttribute("aria-label", rangeCostText(r.product, el.getAttribute("data-cost-range")));
+    });
     app.querySelectorAll("[data-cost-product]").forEach(function (el) { el.textContent = productFromText(el.getAttribute("data-cost-product")); });
   }
 
@@ -457,6 +483,23 @@
     chev: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     info: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 11v6M12 7.5v.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
   };
+
+  /* ---------- Nimbus guide ---------- */
+  const REDUCE = (function () { try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } })();
+  const guideSeen = {}, guideImgFailed = {};
+  // Nimbus + speech bubble. It bobs in the first time it appears (not on re-renders).
+  function guideHtml(key, role, text, countAsSeen) {
+    const n = (C.nimbus || {})[role] || {};
+    const src = guideImgFailed[role] ? "" : assetUrl(n.nimbusUrl, n.local);
+    const src2 = guideImgFailed[role] ? "" : assetUrl(n.nimbusUrl2x, n.local2x);
+    const isNew = !guideSeen[key] && !REDUCE;
+    if (countAsSeen !== false) guideSeen[key] = true;
+    return '<div class="mdfc-guide mdfc-guide--' + role + (isNew ? " is-new" : "") + (src ? "" : " no-img") + '">' +
+      (src ? '<img class="mdfc-guide-img" data-role="' + role + '" src="' + esc(src) + '"' +
+        (src2 ? ' srcset="' + esc(src) + " 1x, " + esc(src2) + ' 2x"' : "") + ' alt="" decoding="async">' : "") +
+      '<p class="mdfc-bubble">' + esc(text) + "</p></div>";
+  }
+  function guideGone(key) { guideSeen[key] = false; }
 
   /* ---------- Rendering ---------- */
   let root, app, panel, bar, stageEl, stageLabel, stageNote, live;
@@ -474,6 +517,7 @@
               '<div class="mdfc-stage-note" hidden></div>' +
               '<div class="mdfc-stage-hint" aria-hidden="true">' + esc(T.stageHint) + "</div>" +
             "</div>" +
+            '<div class="mdfc-stage-loading">' + guideHtml("think", "think", T.guideThink) + "</div>" +
             '<div class="mdfc-stage-fallback" hidden><div class="mdfc-stage-swatch"></div><p>' + esc(T.stageFallback) + "</p></div>" +
           "</div>" +
         "</div>" +
@@ -518,12 +562,15 @@
         "</li>";
     }).join("");
     const canAdd = state.rooms.length < (Number(C.maxRooms) || 10);
-    let html = '<div class="mdfc-group">' +
+    const showPoint = e.belowMin && canAdd;
+    if (!showPoint) guideGone("point");
+    let html = guideHtml("wave", "wave", T.guideWave) +
+      '<div class="mdfc-group">' +
       '<h3 class="mdfc-h">' + esc(T.roomsHeading) + "</h3>" +
       '<ul class="mdfc-roomtabs" role="list">' + tabs + "</ul>" +
-      (e.belowMin && canAdd
-        ? '<div class="mdfc-minorder"><p>' + ICON.info + "<span>" + esc(fmt(T.minOrderNote, { minOrder: money(C.minOrder) })) + ". " +
-          esc(T.minOrderAddPrompt) + "</span></p>" +
+      (showPoint
+        ? '<div class="mdfc-minorder">' + guideHtml("point", "point", T.minOrderAddPrompt) +
+          '<p class="mdfc-minorder-note">' + esc(fmt(T.minOrderNote, { minOrder: money(C.minOrder) })) + ".</p>" +
           '<button type="button" class="mdfc-btn mdfc-btn--outline" id="mdfc-addroom-min" data-action="add-room-min">' + ICON.plus + "<span>" + esc(T.minOrderAddButton) + "</span></button></div>"
         : (canAdd ? '<button type="button" class="mdfc-addroom" id="mdfc-addroom" data-action="add-room">' + ICON.plus + "<span>" + esc(T.addRoom) + "</span></button>" : "")) +
       "</div>";
@@ -562,7 +609,10 @@
     html += '<div class="mdfc-group"><h3 class="mdfc-h" id="mdfc-prod-h">' + esc(T.flooringHeading) + "</h3>" +
       '<div class="mdfc-products" role="group" aria-labelledby="mdfc-prod-h">' +
       pks.map(function (pk) {
+        const first = visibleRanges(pk)[0];
+        const sw = first ? assetUrl(first.thumbUrl, first.thumbLocal) : "";
         return '<button type="button" class="mdfc-product" id="mdfc-prod-' + esc(pk) + '" data-action="product" data-product="' + esc(pk) + '" aria-pressed="' + (r.product === pk) + '">' +
+          '<span class="mdfc-product-swatch">' + (sw ? '<img src="' + esc(sw) + '" alt="" loading="lazy">' : "") + "</span>" +
           '<span class="mdfc-product-name">' + esc(productLabel(pk)) + "</span>" +
           '<span class="mdfc-product-from" data-cost-product="' + esc(pk) + '">' + esc(productFromText(pk)) + "</span></button>";
       }).join("") + "</div>" +
@@ -578,11 +628,11 @@
         const big = !link && rg.coloursUrl === null ? (assetUrl(rg.textureUrl, rg.textureLocal) || assetUrl(rg.thumbUrl, rg.thumbLocal)) : "";
         return '<li class="mdfc-card' + (on ? " is-on" : "") + (link || big ? "" : " is-solo") + '">' +
           '<button type="button" class="mdfc-range" id="mdfc-range-' + esc(rg.id) + '" data-action="range" data-range="' + esc(rg.id) + '" aria-pressed="' + on + '">' +
-            '<span class="mdfc-thumbcol"><span class="mdfc-thumb">' + thumbHtml(rg) + "</span>" +
-              (hasText(rg.shownAs) ? '<span class="mdfc-shown">' + esc(fmt(T.shownIn, { colour: rg.shownAs })) + "</span>" : "") + "</span>" +
+            '<span class="mdfc-thumb">' + thumbHtml(rg) + "</span>" +
             '<span class="mdfc-range-text"><span class="mdfc-range-name">' + esc(rg.name) + "</span>" +
-            (hasText(rg.tagline) ? '<span class="mdfc-range-sub">' + esc(rg.tagline) + "</span>" : "") + "</span>" +
-            '<span class="mdfc-range-ppm" data-cost-range="' + esc(rg.id) + '">' + esc(rangeCostText(r.product, rg.id)) + "</span>" +
+            (hasText(rg.tagline) ? '<span class="mdfc-range-sub">' + esc(rg.tagline) + "</span>" : "") +
+            (hasText(rg.shownAs) ? '<span class="mdfc-shown">' + esc(fmt(T.shownIn, { colour: rg.shownAs })) + "</span>" : "") + "</span>" +
+            '<span class="mdfc-range-ppm" data-cost-range="' + esc(rg.id) + '" aria-label="' + esc(rangeCostText(r.product, rg.id)) + '">' + rangeCostHtml(r.product, rg.id) + "</span>" +
           "</button>" +
           (link ? '<a class="mdfc-colours" href="' + esc(rg.coloursUrl) + '" target="_blank" rel="noopener" data-action="range-link" data-range="' + esc(rg.id) + '">' +
             "<span>" + esc(T.seeColours) + '<span class="mdfc-visually-hidden"> ' + esc(rg.name + " " + T.newTab) + "</span></span>" + ICON.arrow + "</a>" : "") +
@@ -620,6 +670,7 @@
     bar.classList.toggle("is-open", !!state.barOpen);
     bar.innerHTML = '<div class="mdfc-bar-in">' +
       '<div class="mdfc-pay">' +
+        '<div class="mdfc-more mdfc-celebrate">' + guideHtml("celebrate", "celebrate", celebrateText(), app.classList.contains("is-wide") || !!state.barOpen) + "</div>" +
         '<div class="mdfc-paytoggle mdfc-more" role="radiogroup" aria-label="' + esc(T.paymentLabel) + '">' + payOpt("weekly", T.weekly) + payOpt("monthly", T.monthly) + "</div>" +
         '<div class="mdfc-weekly"><span class="mdfc-big">' + esc(money(weekly ? e.weekly : e.monthly)) + '</span><span class="mdfc-per">' + esc(weekly ? T.perWeek : T.perMonth) + "</span></div>" +
         '<div class="mdfc-daily mdfc-more">' + esc((weekly
@@ -644,12 +695,48 @@
       '<p class="mdfc-smallprint">' + esc(T.smallPrint) + (C.showPrefit === true ? " " + esc(fmt(T.prefitDetail, { deposit: money(e.deposit) })) : "") + "</p>" +
       '<button type="button" class="mdfc-linkbtn mdfc-restart" data-action="restart">' + esc(T.startAgain) + "</button>";
 
+    setFigure(weekly ? e.weekly : e.monthly);
+
     function payOpt(v, label) {
       const id = "mdfc-pay-" + v;
       return '<label class="mdfc-payopt' + (state.payment === v ? " is-on" : "") + '" for="' + id + '">' +
         '<input class="mdfc-visually-hidden" type="radio" id="' + id + '" name="mdfc-pay" value="' + v + '"' +
         (state.payment === v ? " checked" : "") + ' data-field="payment"><span>' + esc(label) + "</span></label>";
     }
+  }
+
+  function celebrateText() {
+    if (state.rooms.length > 1) return T.guideCelebrateMany;
+    const r = state.rooms[0];
+    return r.type === STAIRS ? T.guideCelebrateStairs : fmt(T.guideCelebrateOne, { room: typeLabel(r.type).toLowerCase() });
+  }
+
+  // The big weekly/monthly figure counts to its new value over 400ms
+  let shownFigure = null, figureRaf = 0;
+  function setFigure(target) {
+    const from = shownFigure;
+    cancelAnimationFrame(figureRaf);
+    const put = function (v) { const el = bar.querySelector(".mdfc-big"); if (el) el.textContent = money(v); };
+    if (from === null || from === target || REDUCE) { shownFigure = target; put(target); return; }
+    put(from);
+    const t0 = performance.now();
+    const step = function (now) {
+      const k = Math.min(1, (now - t0) / 400);
+      if (k >= 1) { shownFigure = target; put(target); return; }
+      const eased = 1 - Math.pow(1 - k, 3);
+      shownFigure = from + (target - from) * eased;
+      put(Math.round(shownFigure));
+      figureRaf = requestAnimationFrame(step);
+    };
+    figureRaf = requestAnimationFrame(step);
+  }
+
+  // Room tabs: the controls slide in from the right (later room) or left (earlier)
+  function slidePanel(dir) {
+    if (REDUCE || !panel) return;
+    panel.classList.remove("mdfc-slide-l", "mdfc-slide-r");
+    void panel.offsetWidth;
+    panel.classList.add(dir === "l" ? "mdfc-slide-l" : "mdfc-slide-r");
   }
 
   function renderStageLabel() {
@@ -751,6 +838,7 @@
     if (fromMinOrder) track("add_room_from_min_order", {});
     track("room_added", { room_type: r.type, rooms: state.rooms.length });
     renderAll("mdfc-tab-" + r.id);
+    slidePanel("r");
   }
 
   function onClick(ev) {
@@ -761,10 +849,15 @@
     markStarted();
     const r = activeRoom();
     switch (el.getAttribute("data-action")) {
-      case "select-room":
-        state.active = Number(el.getAttribute("data-i")) || 0;
+      case "select-room": {
+        const to = Number(el.getAttribute("data-i")) || 0;
+        if (to === state.active) return;
+        const dir = to > state.active ? "r" : "l";
+        state.active = to;
         renderAll();
+        slidePanel(dir);
         break;
+      }
       case "remove-room": {
         if (state.rooms.length < 2) return;
         const i = Number(el.getAttribute("data-i"));
@@ -772,6 +865,7 @@
         if (state.active > i || state.active >= state.rooms.length) state.active = Math.max(0, state.active - 1);
         track("room_removed", { rooms: state.rooms.length });
         renderAll("mdfc-tab-" + activeRoom().id);
+        slidePanel("l");
         break;
       }
       case "add-room": addRoom(false); break;
@@ -913,6 +1007,14 @@
   function onImgError(ev) {
     const img = ev.target;
     if (!img || img.tagName !== "IMG" || !root.contains(img)) return;
+    if (img.classList.contains("mdfc-guide-img")) {
+      guideImgFailed[img.getAttribute("data-role")] = true;
+      const g = img.closest(".mdfc-guide");
+      if (g) g.classList.add("no-img");
+      img.parentNode.removeChild(img);
+      return;
+    }
+    if (img.closest(".mdfc-product-swatch")) { img.parentNode.removeChild(img); return; }
     const holder = img.closest(".mdfc-thumb");
     if (holder) holder.innerHTML = '<span class="mdfc-thumb-empty" role="img" aria-label="' + esc(img.alt || "") + '">' + ICON.swatch + "</span>";
   }
@@ -930,7 +1032,7 @@
     const orbit = { yaw: 0.62, pitch: 0.5 };
     const H = 2.4, TH = 0.08;
     let drag = null, fadeTo = null, fadeT = 1, currentId = "", rafId = 0, visible = true, interacted = false, last = 0;
-    const reduce = (function () { try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } })();
+    const reduce = REDUCE;
 
     function hasWebGL() {
       try {
@@ -938,8 +1040,13 @@
         return !!(window.WebGLRenderingContext && (c.getContext("webgl") || c.getContext("experimental-webgl")));
       } catch (e) { return false; }
     }
+    function loaded() {
+      const l = app.querySelector(".mdfc-stage-loading");
+      if (l) l.hidden = true;
+    }
     function fail() {
       failed = true;
+      loaded();
       const fb = app.querySelector(".mdfc-stage-fallback");
       if (fb) fb.hidden = false;
       const hint = app.querySelector(".mdfc-stage-hint");
@@ -949,6 +1056,7 @@
 
     function load() {
       if (!hasWebGL()) { fail(); return; }
+      setTimeout(loaded, 12000); // never leave Nimbus waiting forever
       if (window.THREE && window.THREE.WebGLRenderer) { start(window.THREE); return; }
       const s = document.createElement("script");
       s.src = BASE + "vendor/three.min.js";
@@ -1056,8 +1164,9 @@
       const entry = { base: base, fade: fade, tex: null, tile: rg.tileSize || [0.5, 0.5], hasTexture: false };
       mats[rg.id] = entry;
       const src = assetUrl(rg.textureUrl, rg.textureLocal);
-      if (!src) return entry;
+      if (!src) { loaded(); return entry; }
       const img = new Image();
+      img.onerror = loaded;
       img.crossOrigin = "anonymous";
       img.onload = function () {
         try {
@@ -1074,8 +1183,9 @@
           entry.tex = tex; entry.hasTexture = true;
           [base, fade].forEach(function (m) { m.map = tex; m.bumpMap = tex; m.bumpScale = look.bump; m.color.set(0xffffff); m.needsUpdate = true; });
           applyRepeat();
+          loaded();
           kick();
-        } catch (e) { /* keep the plain colour */ }
+        } catch (e) { loaded(); }
       };
       img.src = src;
       return entry;
@@ -1254,6 +1364,7 @@
       root.setAttribute("data-mdfc-ready", "1");
       if (!productKeys().length || !roomTypes().length) return;
       ensureFont();
+      if (hasText(C.displayFont)) root.style.setProperty("--mdfc-display", C.displayFont);
       app = document.createElement("div");
       app.className = "mdfc-app";
       root.appendChild(app);

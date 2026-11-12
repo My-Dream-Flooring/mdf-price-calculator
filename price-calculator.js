@@ -38,7 +38,7 @@
     termWeeks: 36,
 
     // Where the "Book my free home visit" button goes.
-    bookingUrl: "TODO",
+    bookingUrl: "https://mydreamflooring.co.uk",
 
     // Where "Not sure? Browse our carpets first" goes (opens in a new tab).
     carpetPageUrl: "TODO",

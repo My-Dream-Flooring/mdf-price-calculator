@@ -83,7 +83,7 @@ If something isn't ready yet, write `"TODO"` and the calculator copes:
 | `image` | A plain placeholder swatch |
 | `link` | No "See the range" link |
 | `pricePerM2` | That range is hidden |
-| `bookingUrl` | No booking button. **Fill this in before going live.** |
+| `bookingUrl` | No booking button |
 | `carpetPageUrl` | No "Browse our carpets" link |
 
 If every range in a product is hidden, the whole product is hidden.

@@ -79,8 +79,10 @@
     // bar. Use [] to hide both.
     financeBadge: ["0% interest", "No credit checks"],
 
-    // Where the "Book my free home visit" button goes.
-    bookingUrl: "https://mydreamflooring.co.uk",
+    // Where the "Book my free home visit" button goes. "#something" scrolls to
+    // the element with that CSS ID on the same page (the inline booking form);
+    // a full web address opens that page instead.
+    bookingUrl: "#mdfc-booking",
 
     // Most rooms a customer can add.
     maxRooms: 10,
@@ -974,9 +976,23 @@
       case "close-lightbox":
         closeLightbox();
         break;
-      case "book":
+      case "book": {
         track("book_visit_clicked", { total_high: estimate().high });
+        // Same-page form: scroll to it smoothly and put the cursor in its first field
+        const href = el.getAttribute("href") || "";
+        let target = null;
+        if (href.charAt(0) === "#" && href.length > 1) {
+          try { target = document.getElementById(decodeURIComponent(href.slice(1))); } catch (e) { target = null; }
+        }
+        if (target) {
+          ev.preventDefault();
+          try { target.scrollIntoView({ behavior: REDUCE ? "auto" : "smooth", block: "start" }); } catch (e) { target.scrollIntoView(); }
+          const field = target.querySelector("input:not([type=hidden]), select, textarea");
+          if (field) setTimeout(function () { try { field.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }, REDUCE ? 0 : 500);
+          try { if (history.replaceState) history.replaceState(null, "", href); } catch (e) { /* ignore */ }
+        }
         break;
+      }
       case "restart":
         track("calculator_restart", {});
         closeLightbox();

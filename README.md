@@ -141,7 +141,7 @@ The easy way to edit, straight on GitHub:
 | `prefitPercent` | "Paid before fitting" as a percentage of the total. It includes the deposit and is never less than the deposit. |
 | `showPrefit` | `true` shows "paid before fitting" in the price bar and small print. `false` hides it. |
 | `financeBadge` | The finance claims, e.g. `["0% interest", "No credit checks"]`. Shown as a strip at the top and as chips in the price bar. Use `[]` to hide both. |
-| `bookingUrl` | Where "Book my free home visit" goes. |
+| `bookingUrl` | Where "Book my free home visit" goes. Currently `#mdfc-booking`: the button scrolls smoothly to the element with CSS ID `mdfc-booking` on the same page (the inline booking form) and puts the cursor in its first field. If you rename the form's CSS ID in Elementor, update this to match. A full web address (`https://…`) opens that page instead. |
 | `maxRooms` | Most rooms a customer can add. |
 | `products` | Carpet, Vinyl, Laminate and their ranges (see below). Each product also has `browseUrl` and `browseLabel`: the link under its ranges ("Browse every carpet and colour", "Browse all our vinyl flooring", "Browse all our laminate"). |
 | `roomPresets` | Room types and their Small / Medium / Large sizes as `[length, width]` in metres. |

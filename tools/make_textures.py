@@ -27,16 +27,27 @@ TEXTURES = {
     "westminster": ("Westminster-Mid-Grey.png", "seam", (60, 60, 490, 490)),
     "buckingham":  ("Buckingham-Mist.png", "seam", (20, 20, 600, 600)),
     "expressions": ("Cedar-Grey-Herringbone-EX11.png", "blend", (30, 30, 597, 597)),  # 4 herringbone repeats
-    "balmoral":    ("Pop-Art-9003.png", "seam", (26, 26, 450, 596)),                 # 1 design repeat (not square)
+    "balmoral":    ("Pop-Art-3001.png", "checker", None),                             # 8cm squares, see CHECKER
     "laminate":    ("Laminate-Atlas.png", "blend", (40, 40, 580, 580)),
 }
 BAND = 48  # overlap band (px, source scale) for the blend method
 # Distance (px) from the source edge that is fully opaque and clear of the
 # rounded corners. Crops (plus any overlap band) must stay inside this.
+# Balmoral Pop Art 3001 is a black/white checkerboard of 8cm squares (16cm
+# repeat). The photo has only one complete row, so the tile is assembled from
+# four real squares (x0, y0, x1, y1), each trimmed inside its edges, evened out
+# and matched to a common black / white level, then laid out 2x2.
+CHECKER = {
+    "white_a": (15, 22, 303, 284),
+    "black_a": (312, 22, 601, 284),
+    "black_b": (15, 293, 303, 589),
+    "white_b": (312, 293, 601, 589),
+}
+
 # Per-texture overrides: overlap band width and carpet flattening strength.
 BAND_FOR = {"westminster": 96}
 FLAT_SIGMA = {"westminster": 14, "buckingham": 45}
-SAFE = {"westminster": 50, "buckingham": 4, "expressions": 22, "balmoral": 20, "laminate": 36}
+SAFE = {"westminster": 50, "buckingham": 4, "expressions": 22, "balmoral": 26, "laminate": 36}
 
 
 def load(fname):
@@ -70,27 +81,19 @@ def flatten_local(a, sigma=45):
     return np.clip(a * (inner / blur)[..., None], 0, 255)
 
 
-def _gblur(x, sigma):
-    """Gaussian blur of a float array (any range) via Pillow, in 0..255 steps."""
-    lo, hi = float(x.min()), float(x.max())
-    span = hi - lo or 1.0
-    img = Image.fromarray(((x - lo) / span * 255).astype(np.uint8))
-    return np.array(img.filter(ImageFilter.GaussianBlur(sigma))).astype(float) / 255 * span + lo
-
-
-def flatten_two_tone(a, sigma=18):
-    """For black/white prints: even out each tone separately (removes the
-    reflection on the black stripes in the Pop Art photo)."""
-    lum = a.mean(2)
-    dark = np.clip((150 - lum) / 40, 0, 1)  # soft mask: 1 = black ink, 0 = white
-    out = a.copy()
-    for m in (dark, 1 - dark):
-        wsum = _gblur(m, sigma) + 1e-3
-        local = np.stack([_gblur(a[..., c] * m, sigma) for c in range(3)], -1) / wsum[..., None]
-        target = (a * m[..., None]).sum((0, 1)) / m.sum()
-        gain = np.clip(target / np.maximum(local, 1), 0.3, 3)
-        out = out * (1 - m[..., None]) + a * gain * m[..., None]
-    return np.clip(out, 0, 255)
+def checker_tile(a):
+    half = 512
+    sq = {}
+    for k, (x0, y0, x1, y1) in CHECKER.items():
+        c = flatten_lighting(a, (x0, y0, x1, y1))[y0:y1, x0:x1]
+        sq[k] = np.array(to_img(c).resize((half, half), Image.LANCZOS)).astype(float)
+    for tone in ("white", "black"):  # match both squares of a tone to their shared mean colour
+        target = (sq[tone + "_a"].mean((0, 1)) + sq[tone + "_b"].mean((0, 1))) / 2
+        for k in (tone + "_a", tone + "_b"):
+            sq[k] = sq[k] * (target / sq[k].mean((0, 1)))
+    top = np.concatenate([sq["white_a"], sq["black_a"]], 1)
+    bottom = np.concatenate([sq["black_b"], sq["white_b"]], 1)
+    return np.concatenate([top, bottom], 0)
 
 
 def mirror_tile(a, box):
@@ -157,6 +160,8 @@ def build(name, method=None):
     fname, default_method, box = TEXTURES[name]
     method = method or default_method
     a = load(fname)
+    if default_method == "checker":
+        return to_img(checker_tile(a)).resize((1024, 1024), Image.LANCZOS)
     x, y, w, h = box
     band = BAND_FOR.get(name, BAND)
     pad = band if method in ("blend", "seam") else 0
@@ -168,8 +173,6 @@ def build(name, method=None):
         box = (x, y, w, h)
     if name in ("westminster", "buckingham"):
         a = flatten_local(a, FLAT_SIGMA[name])
-    elif name == "balmoral":  # two-tone print: even each tone, removes the photo's reflection
-        a = flatten_two_tone(a)
     else:
         a = flatten_lighting(a, (x, y, x + w + pad, y + h + pad))
     if method == "mirror":
@@ -194,7 +197,7 @@ if __name__ == "__main__":
         out = sys.argv[2]
         os.makedirs(out, exist_ok=True)
         for n in TEXTURES:
-            for m in ("mirror", "blend", "seam"):
+            for m in (("checker",) if TEXTURES[n][1] == "checker" else ("mirror", "blend", "seam")):
                 t = build(n, m).resize((512, 512), Image.LANCZOS)
                 rep = Image.new("RGB", (1024, 1024))
                 for i in range(2):

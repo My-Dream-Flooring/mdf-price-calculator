@@ -55,6 +55,10 @@ The easy way to edit, straight on GitHub:
 | `depositPerRoom` | Deposit in £ per room. |
 | `minOrder` | If the high estimate is below this, customers see "Our minimum order is £…". |
 | `termWeeks` | Number of weeks the customer pays over. |
+| `minWeekly` | Lowest weekly payment shown (£). If the maths comes out lower, this figure is shown instead, with no message about it. |
+| `minMonthly` | Lowest monthly payment shown (£). Works the same way as `minWeekly`. |
+| `prefitPercent` | The "Paid before fitting" amount, as a percentage of the high total. It includes the deposit. |
+| `showPrefit` | `true` shows the "Paid before fitting" line on the results screen. `false` hides it completely. |
 | `bookingUrl` | Where "Book my free home visit" goes. |
 | `carpetPageUrl` | Where "Not sure? Browse our carpets first" goes. |
 | `products` | Laminate, Vinyl, Carpet and their ranges (see below). |
@@ -72,6 +76,10 @@ Each range looks like this:
 - `image` should be a square photo, ideally at least 600×600px. Upload it to the WordPress Media Library and paste its full URL.
 - `link` opens in a new tab. Use `null` (no quote marks) if there's no range page: tapping the swatch then opens a bigger version of the image instead.
 - To add a range, copy a whole `{ ... },` line and change it. Every line except the last in the list needs a comma at the end.
+
+### Turning the "Paid before fitting" line off
+
+Find `showPrefit: true,` in `MDF_CONFIG` and change it to `showPrefit: false,` (no quote marks). Commit, then bump `?v=` in the Elementor widget. To turn it back on, change it to `true`. To change the amount, edit `prefitPercent` (for example `prefitPercent: 25,`).
 
 ### "TODO" values
 
@@ -100,8 +108,10 @@ Open the demo page after GitHub Pages updates. If the calculator doesn't appear,
 - **Per room:** low = area × price; high = area × (1 + waste %) × price. Each is rounded to the nearest £5.
 - **Total:** the sum of the rooms' lows and highs.
 - **Deposit:** `depositPerRoom` × number of rooms, shown separately.
-- **Weekly:** (high total − deposit) ÷ `termWeeks`, rounded **up** to the nearest 50p.
-- **Monthly:** weekly × 52 ÷ 12, rounded **up** to the nearest £1.
+- **Base weekly:** (high total − deposit) ÷ `termWeeks`.
+- **Weekly:** the higher of base weekly and `minWeekly`, rounded **up** to the nearest 50p.
+- **Monthly:** the higher of (base weekly × 52 ÷ 12) and `minMonthly`, rounded **up** to the nearest £1.
+- **Paid before fitting:** high total × `prefitPercent` ÷ 100, rounded **up** to the nearest £1. It includes the deposit. Shown only if `showPrefit` is `true`.
 - If a customer skips choosing a range, the cheapest range for that product is used and the result is labelled "From".
 
 ---
@@ -117,7 +127,7 @@ Each event is pushed to `window.dataLayer` as `{ event: "<name>", ...params }`, 
 | `product_selected` | `product` | A product card is tapped |
 | `range_selected` | `product`, `range` | A range is chosen (not fired on Skip) |
 | `range_link_clicked` | `range` | "See the range" is clicked |
-| `estimate_viewed` | `rooms`, `product_mix` (e.g. `carpet:2\|vinyl:1`), `total_low`, `total_high` | Results screen is shown |
+| `estimate_viewed` | `rooms`, `product_mix` (e.g. `carpet:2\|vinyl:1`), `total_low`, `total_high`, `prefit`, `payment_frequency` (`weekly` / `monthly`) | Results screen is shown |
 | `payment_toggle` | `payment_period` (`weekly` / `monthly`) | Payment toggle changes |
 | `book_visit_clicked` | `total_high` | "Book my free home visit" is clicked |
 | `calculator_restart` | none | "Start again" is clicked |

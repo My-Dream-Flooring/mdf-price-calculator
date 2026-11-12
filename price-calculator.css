@@ -527,6 +527,7 @@
 #mdf-price-calculator .mdfc-notice svg,
 #mdf-price-calculator .mdfc-fitting svg { flex: none; width: 20px; height: 20px; margin-top: 1px; }
 #mdf-price-calculator .mdfc-fitting svg { color: var(--mdfc-primary); }
+#mdf-price-calculator .mdfc-fitting--standalone { background: var(--mdfc-white); border: 1px solid var(--mdfc-line); justify-content: flex-start; }
 
 #mdf-price-calculator .mdfc-pay { text-align: center; }
 #mdf-price-calculator .mdfc-pay > * + * { margin-top: 12px; }

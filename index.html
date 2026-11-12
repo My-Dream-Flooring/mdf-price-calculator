@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MDF Price Calculator – demo</title>
+  <meta name="robots" content="noindex">
+  <style>
+    /* Demo page styles only. The calculator does not depend on any of this. */
+    body { margin: 0; font-family: Georgia, serif; background: #fff; color: #222; }
+    .demo-wrap { padding: 24px 16px 64px; max-width: 760px; margin: 0 auto; }
+    .demo-head h1 { font-size: 22px; margin: 0 0 4px; }
+    .demo-head p { margin: 0 0 24px; color: #555; font-size: 14px; }
+    .demo-log { margin-top: 32px; font: 12px/1.5 ui-monospace, Menlo, Consolas, monospace; background: #f6f6f6; border-radius: 8px; padding: 12px; max-height: 260px; overflow: auto; white-space: pre-wrap; word-break: break-word; }
+    .demo-log h2 { font: 600 13px system-ui, sans-serif; margin: 0 0 8px; }
+
+    /* Deliberately aggressive "theme" rules, like a WordPress theme or Elementor
+       kit might have. If the calculator's scoping works, none of this shows up
+       inside it. */
+    button, [type="button"] { background: #c00; color: #ff0; font-weight: 700; text-transform: uppercase; border: 3px solid #000; padding: 20px; }
+    input, select { border: 3px dotted red; background: #ffc; font-family: "Comic Sans MS", cursive; }
+    h2, h3 { font-weight: 800; color: purple; margin: 2em 0; }
+    ul li { list-style: square; margin-left: 2em; }
+    a { color: red; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="demo-wrap">
+    <header class="demo-head">
+      <h1>My Dream Flooring – price calculator demo</h1>
+      <p>Test page. The block below is exactly what goes into the Elementor HTML widget.</p>
+    </header>
+
+    <!-- ===== Elementor HTML widget contents start ===== -->
+    <div id="mdf-price-calculator"></div>
+    <link rel="stylesheet" href="price-calculator.css">
+    <script src="price-calculator.js" defer></script>
+    <!-- ===== Elementor HTML widget contents end ===== -->
+
+    <section class="demo-log" aria-label="Tracking log">
+      <h2>dataLayer events (demo only)</h2>
+      <div id="demo-log-body">No events yet.</div>
+    </section>
+  </div>
+
+  <script>
+    // Demo only: show what the calculator pushes to window.dataLayer.
+    // Hotjar (window.hj) is intentionally NOT loaded, to prove it's optional.
+    (function () {
+      var out = document.getElementById("demo-log-body");
+      var first = true;
+      window.dataLayer = window.dataLayer || [];
+      var push = window.dataLayer.push;
+      window.dataLayer.push = function (obj) {
+        if (first) { out.textContent = ""; first = false; }
+        out.textContent = JSON.stringify(obj) + "\n" + out.textContent;
+        return push.apply(window.dataLayer, arguments);
+      };
+    })();
+  </script>
+</body>
+</html>

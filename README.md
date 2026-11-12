@@ -57,7 +57,7 @@ The easy way to edit, straight on GitHub:
 | `termWeeks` | Number of weeks the customer pays over. |
 | `minWeekly` | Lowest weekly payment shown (£). If the maths comes out lower, this figure is shown instead, with no message about it. |
 | `minMonthly` | Lowest monthly payment shown (£). Works the same way as `minWeekly`. |
-| `prefitPercent` | The "Paid before fitting" amount, as a percentage of the high total. It includes the deposit. |
+| `prefitPercent` | The "Paid before fitting" amount, as a percentage of the high total. It includes the deposit and is never less than the deposit. |
 | `showPrefit` | `true` shows the "Paid before fitting" line on the results screen. `false` hides it completely. |
 | `bookingUrl` | Where "Book my free home visit" goes. |
 | `carpetPageUrl` | Where "Not sure? Browse our carpets first" goes. |
@@ -111,7 +111,7 @@ Open the demo page after GitHub Pages updates. If the calculator doesn't appear,
 - **Base weekly:** (high total − deposit) ÷ `termWeeks`.
 - **Weekly:** the higher of base weekly and `minWeekly`, rounded **up** to the nearest 50p.
 - **Monthly:** the higher of (base weekly × 52 ÷ 12) and `minMonthly`, rounded **up** to the nearest £1.
-- **Paid before fitting:** high total × `prefitPercent` ÷ 100, rounded **up** to the nearest £1. It includes the deposit. Shown only if `showPrefit` is `true`.
+- **Paid before fitting:** the higher of (high total × `prefitPercent` ÷ 100) and the deposit, rounded **up** to the nearest £1. It includes the deposit. Shown only if `showPrefit` is `true`.
 - If a customer skips choosing a range, the cheapest range for that product is used and the result is labelled "From".
 
 ---

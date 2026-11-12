@@ -43,8 +43,8 @@
     minMonthly: 65,
 
     // "Paid before fitting" line on the results screen.
-    // Pre-fit = high total x prefitPercent / 100, rounded up to the nearest £1.
-    // It INCLUDES the deposit. Set showPrefit to false to hide the line.
+    // Pre-fit = the higher of (high total x prefitPercent / 100) and the
+    // deposit, rounded up to the nearest £1. It INCLUDES the deposit. Set showPrefit to false to hide the line.
     prefitPercent: 20,
     showPrefit: true,
 
@@ -331,7 +331,7 @@
     const baseWeekly = Math.max(0, high - deposit) / term;
     const weekly = ceilHalf(Math.max(baseWeekly, Number(C.minWeekly) || 0));
     const monthly = ceilPound(Math.max(baseWeekly * 52 / 12, Number(C.minMonthly) || 0));
-    const prefit = ceilPound(high * (Number(C.prefitPercent) || 0) / 100);
+    const prefit = ceilPound(Math.max(high * (Number(C.prefitPercent) || 0) / 100, deposit));
     return {
       lines: lines, low: low, high: high, deposit: deposit, weekly: weekly, monthly: monthly, prefit: prefit,
       from: lines.some(function (l) { return l.skipped; }),

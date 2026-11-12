@@ -569,7 +569,7 @@
         '<div class="mdfc-panel"></div>' +
       "</div>" +
       '<div class="mdfc-notes"></div>' +
-      '<div class="mdfc-bar" role="region" aria-label="Your price"></div>' +
+      '<div class="mdfc-bar is-hidden" role="region" aria-label="Your price" aria-hidden="true"></div>' +
       '<div class="mdfc-visually-hidden" role="status" aria-live="polite"></div>';
     panel = app.querySelector(".mdfc-panel");
     bar = app.querySelector(".mdfc-bar");
@@ -745,12 +745,22 @@
     bar.innerHTML = '<div class="mdfc-bar-in">' +
       '<div class="mdfc-pay">' +
         '<div class="mdfc-more mdfc-celebrate">' + guideHtml("celebrate", "celebrate", celebrateText(), app.classList.contains("is-wide") || !!state.barOpen) + "</div>" +
-        '<div class="mdfc-paytoggle mdfc-more" role="radiogroup" aria-label="' + esc(T.paymentLabel) + '">' + payOpt("weekly", T.weekly) + payOpt("monthly", T.monthly) + "</div>" +
-        '<div class="mdfc-weekly"><span class="mdfc-big">' + esc(money(weekly ? e.weekly : e.monthly)) + '</span><span class="mdfc-per">' + esc(weekly ? T.perWeek : T.perMonth) + "</span></div>" +
+        // Figure and the Weekly | Monthly switch share one line (the switch wraps
+        // under the figure only if there's genuinely no room)
+        '<div class="mdfc-figrow">' +
+          '<div class="mdfc-weekly"><span class="mdfc-big">' + esc(money(weekly ? e.weekly : e.monthly)) + '</span><span class="mdfc-per">' + esc(weekly ? T.perWeek : T.perMonth) + "</span></div>" +
+          '<div class="mdfc-paytoggle" role="radiogroup" aria-label="' + esc(T.paymentLabel) + '">' + payOpt("weekly", T.weekly) + payOpt("monthly", T.monthly) + "</div>" +
+        "</div>" +
         '<div class="mdfc-daily mdfc-more">' + esc((weekly
           ? fmt(T.overTerm, { weeks: C.termWeeks })
           : fmt(T.overTermMonthly, { months: months })) + " · " + dailyLine(e)) + "</div>" +
-        '<div class="mdfc-compact-sub">' + esc(fmt(T.supplyLabel, { total: priceText(e.low, e.high) })) + "</div>" +
+        // Phones: Details and the supply total on one small line under the figure
+        // (Details sits on the left, under the figure, so its tap area doesn't
+        // overlap the switch's)
+        '<div class="mdfc-subrow">' +
+          '<button type="button" class="mdfc-bar-toggle" id="mdfc-bar-toggle" data-action="toggle-bar" aria-expanded="' + !!state.barOpen + '" aria-controls="mdfc-bar-more">' +
+            esc(state.barOpen ? T.barHide : T.barDetails) + ICON.chev + "</button>" +
+          '<span class="mdfc-compact-sub">' + esc(fmt(T.supplyLabel, { total: priceText(e.low, e.high) })) + "</span></div>" +
       "</div>" +
       '<div class="mdfc-facts mdfc-more" id="mdfc-bar-more">' +
         "<span>" + esc(fmt(T.supplyLabel, { total: priceText(e.low, e.high) })) + "</span>" +
@@ -759,8 +769,6 @@
           (C.showPrefit === true ? " · " + esc(fmt(T.prefitLine, { prefit: money(e.prefit) })) : "") + "</span>" +
         (fin.length ? '<ul class="mdfc-chips" role="list">' + fin.map(function (t) { return '<li class="mdfc-chip">' + ICON.tick + "<span>" + esc(t) + "</span></li>"; }).join("") + "</ul>" : "") +
       "</div>" +
-      '<button type="button" class="mdfc-bar-toggle" id="mdfc-bar-toggle" data-action="toggle-bar" aria-expanded="' + !!state.barOpen + '" aria-controls="mdfc-bar-more">' +
-        esc(state.barOpen ? T.barHide : T.barDetails) + ICON.chev + "</button>" +
       (hasText(C.bookingUrl) ? '<a class="mdfc-cta" href="' + esc(C.bookingUrl) + '" data-action="book">' + esc(T.bookCta) + "</a>" : "") +
       "</div>";
 
@@ -790,7 +798,13 @@
   function setFigure(target) {
     const from = shownFigure;
     cancelAnimationFrame(figureRaf);
-    const put = function (v) { const el = bar.querySelector(".mdfc-big"); if (el) el.textContent = money(v); };
+    const long = money(target).length > 5; // e.g. "£17.50", "£145" -> one size smaller
+    const put = function (v) {
+      const el = bar.querySelector(".mdfc-big");
+      if (!el) return;
+      el.textContent = money(v);
+      el.parentNode.classList.toggle("is-long", long);
+    };
     if (from === null || from === target || REDUCE) { shownFigure = target; put(target); return; }
     put(from);
     const t0 = performance.now();
@@ -1474,20 +1488,56 @@
   }
 
   /* ---------- Fixed price bar ----------
-   * Pinned to the bottom of the screen from page load. The calculator gets
-   * bottom padding equal to the bar's height so nothing sits behind it. The
-   * bar slides away only while the booking form (bookingUrl "#id") is on screen. */
+   * Fixed to the bottom of the screen, but hidden (moved off screen) until the
+   * calculator is in view: its top has scrolled up past ~70% of the screen, or
+   * the visitor has tapped or changed something in it. Hidden again once the
+   * calculator is entirely below the screen, and while the booking form
+   * (bookingUrl "#id") is on screen. The calculator reserves space for the bar
+   * at its bottom only while the bar is showing. */
+  const barVis = { seen: false, below: true, interacted: false, form: false, shown: false };
+  function padForBar() {
+    if (app) app.style.paddingBottom = barVis.shown ? (bar.offsetHeight + 16) + "px" : "";
+  }
+  function applyBar() {
+    const show = !barVis.form && !barVis.below && (barVis.seen || barVis.interacted);
+    if (show === barVis.shown) return;
+    barVis.shown = show;
+    bar.classList.toggle("is-hidden", !show);
+    bar.setAttribute("aria-hidden", show ? "false" : "true");
+    try { bar.inert = !show; } catch (e) { /* older browsers: visibility:hidden covers it */ }
+    padForBar();
+  }
+  function revealBar() {
+    if (barVis.interacted && barVis.shown) return;
+    barVis.interacted = true;
+    barVis.below = false;
+    applyBar();
+  }
   function fixPriceBar() {
-    const pad = function () { app.style.paddingBottom = (bar.offsetHeight + 16) + "px"; };
-    try { new ResizeObserver(pad).observe(bar); } catch (e) { window.addEventListener("resize", pad); }
-    pad();
+    try { new ResizeObserver(padForBar).observe(bar); } catch (e) { window.addEventListener("resize", padForBar); }
+    if (!("IntersectionObserver" in window)) { barVis.below = false; barVis.seen = true; applyBar(); return; }
+    // Top of the calculator has passed ~70% down the screen
+    new IntersectionObserver(function (en) {
+      if (en[0].isIntersecting) { barVis.seen = true; barVis.below = false; applyBar(); }
+    }, { rootMargin: "0px 0px -30% 0px" }).observe(root);
+    // Calculator entirely below the screen (scrolled back up to the header)
+    new IntersectionObserver(function (en) {
+      const e = en[0];
+      barVis.below = !e.isIntersecting && e.boundingClientRect.top > 0;
+      if (barVis.below) { barVis.seen = false; barVis.interacted = false; }
+      applyBar();
+    }).observe(root);
+    // Any tap or change inside the calculator shows it straight away
+    ["pointerdown", "click", "input", "change", "keydown"].forEach(function (n) {
+      root.addEventListener(n, function (ev) { if (!bar.contains(ev.target)) revealBar(); }, true);
+    });
     const watchForm = function () {
       const href = hasText(C.bookingUrl) ? C.bookingUrl : "";
       if (href.charAt(0) !== "#" || href.length < 2) return true;
       let form = null;
       try { form = document.getElementById(decodeURIComponent(href.slice(1))); } catch (e) { form = null; }
-      if (!form || !("IntersectionObserver" in window)) return false;
-      new IntersectionObserver(function (en) { bar.classList.toggle("is-away", en[0].isIntersecting); }).observe(form);
+      if (!form) return false;
+      new IntersectionObserver(function (en) { barVis.form = en[0].isIntersecting; applyBar(); }).observe(form);
       return true;
     };
     // The form may be added to the page after the calculator; try again once it's loaded

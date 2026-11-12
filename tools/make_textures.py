@@ -13,7 +13,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "textures", "source")
 OUT = os.path.join(ROOT, "textures")
 
-# name -> (source file, method, crop box (x, y, w, h) inside the 700px source)
+# name -> (source file, method, crop box (x, y, w, h) inside the source photo)
 #   mirror : mirrored 2x2 tile of the crop
 #   blend  : crop + overlap band; opposite edges cross-faded (offset-and-blend)
 #   seam   : crop + overlap band; opposite edges joined along the path where they
@@ -29,6 +29,8 @@ TEXTURES = {
     "expressions": ("Cedar-Grey-Herringbone-EX11.png", "blend", (30, 30, 597, 597)),  # 4 herringbone repeats
     "balmoral":    ("Pop-Art-3001.png", "checker", None),                             # 8cm squares, see CHECKER
     "laminate":    ("Laminate-Atlas.png", "blend", (40, 40, 580, 580)),
+    # 900px photo; crop is two chevrons across (2 x 272px) by eight tuft rows
+    "sandringham": ("sandringham-chile-swatch.webp", "seam", (170, 150, 544, 520)),
 }
 BAND = 48  # overlap band (px, source scale) for the blend method
 # Distance (px) from the source edge that is fully opaque and clear of the
@@ -46,8 +48,8 @@ CHECKER = {
 
 # Per-texture overrides: overlap band width and carpet flattening strength.
 BAND_FOR = {"westminster": 96}
-FLAT_SIGMA = {"westminster": 14, "buckingham": 45}
-SAFE = {"westminster": 50, "buckingham": 4, "expressions": 22, "balmoral": 26, "laminate": 36}
+FLAT_SIGMA = {"westminster": 14, "buckingham": 45, "sandringham": 30}
+SAFE = {"westminster": 50, "buckingham": 4, "expressions": 22, "balmoral": 26, "laminate": 36, "sandringham": 0}
 
 
 def load(fname):
@@ -165,13 +167,13 @@ def build(name, method=None):
     x, y, w, h = box
     band = BAND_FOR.get(name, BAND)
     pad = band if method in ("blend", "seam") else 0
-    limit = 700 - SAFE[name]
+    limit = min(a.shape[0], a.shape[1]) - SAFE[name]
     if x + w + pad > limit or y + h + pad > limit:
         if name in ("expressions", "balmoral"):
             raise ValueError(name + ": pattern-repeat crop does not fit")
         w = h = min(limit - x, limit - y) - pad  # shrink plain textures to fit
         box = (x, y, w, h)
-    if name in ("westminster", "buckingham"):
+    if name in ("westminster", "buckingham", "sandringham"):
         a = flatten_local(a, FLAT_SIGMA[name])
     else:
         a = flatten_lighting(a, (x, y, x + w + pad, y + h + pad))
@@ -188,7 +190,8 @@ def thumb(name):
     im = Image.open(os.path.join(SRC, fname)).convert("RGBA")
     bg = Image.new("RGBA", im.size, (255, 255, 255, 255))
     k = SAFE[name] + 4
-    im = Image.alpha_composite(bg, im).convert("RGB").crop((k, k, 700 - k, 700 - k))
+    n = min(im.size)
+    im = Image.alpha_composite(bg, im).convert("RGB").crop((k, k, n - k, n - k))
     return im.resize((160, 160), Image.LANCZOS)
 
 

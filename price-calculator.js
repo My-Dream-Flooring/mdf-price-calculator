@@ -17,7 +17,7 @@
    *  - Every line inside { } ends with a comma.
    *  - Not ready yet? Write "TODO". The calculator copes:
    *      tagline "TODO"      -> tagline is hidden
-   *      link "TODO"         -> the "See the full range of colours" link is hidden
+   *      coloursUrl "TODO"   -> the "Explore the full range" link is hidden
    *      pricePerM2 "TODO"   -> that range is hidden from customers
    *      textureUrl / thumbUrl "TODO" -> the copy in this repo's /textures is used
    *      bookingUrl / carpetPageUrl "TODO" -> that button/link is hidden
@@ -66,8 +66,12 @@
     //   id            – short unique code, lowercase, no spaces (used in tracking)
     //   name          – shown to customers
     //   tagline       – short description under the name
-    //   pricePerM2    – £ per m², supply only
-    //   link          – range page (opens in a new tab), or null for none
+    //   shownAs       – the colour/design in the photos, e.g. "Mid Grey"
+    //                   (shown as "Shown in Mid Grey")
+    //   pricePerM2    – £ per m², supply only. Used for the maths only; customers
+    //                   see what the range costs a week/month for their room
+    //   coloursUrl    – page showing the full range (opens in a new tab as
+    //                   "Explore the full range"), or null for none
     //   textureUrl    – seamless tile in the WordPress media library (live site)
     //   thumbUrl      – 160px swatch in the WordPress media library (live site)
     //   textureLocal / thumbLocal – the same files in this repo (used on GitHub
@@ -80,23 +84,29 @@
         label: "Carpet",
         includedNote: "10mm underlay, gripper and door bars included on all carpets.",
         ranges: [
-          { id: "westminster", name: "Westminster", tagline: "Soft twist, everyday", pricePerM2: 29, link: "TODO",
+          { id: "westminster", name: "Westminster", tagline: "Hard-wearing Saxony", shownAs: "Mid Grey", pricePerM2: 29,
+            coloursUrl: "https://mydreamflooring.co.uk/carpets/?e-filter-101e477-flooring_tier=classic",
             textureUrl: "TODO", thumbUrl: "TODO",
             textureLocal: "textures/westminster.jpg", thumbLocal: "textures/westminster-thumb.jpg", tileSize: [0.25, 0.25] },
-          { id: "buckingham", name: "Buckingham", tagline: "Premium plush", pricePerM2: 35, link: "TODO",
+          { id: "buckingham", name: "Buckingham", tagline: "Tufted cut pile, thick and cosy underfoot", shownAs: "Mist", pricePerM2: 35,
+            coloursUrl: "https://mydreamflooring.co.uk/carpets/?e-filter-101e477-flooring_tier=luxury",
             textureUrl: "TODO", thumbUrl: "TODO",
             textureLocal: "textures/buckingham.jpg", thumbLocal: "textures/buckingham-thumb.jpg", tileSize: [0.3, 0.3] },
-          { id: "sandringham", name: "Sandringham Chile", tagline: "Patterned loop", pricePerM2: 29, link: null,
-            textureUrl: "TODO", thumbUrl: "TODO", textureLocal: "", thumbLocal: "", previewColour: "#b7aa98" }
+          { id: "sandringham", name: "Sandringham Chile", tagline: "Patterned loop", shownAs: "Chile", pricePerM2: 29,
+            coloursUrl: null,
+            textureUrl: "TODO", thumbUrl: "TODO",
+            textureLocal: "textures/sandringham.jpg", thumbLocal: "textures/sandringham-thumb.jpg", tileSize: [0.11, 0.105] }
         ]
       },
       vinyl: {
         label: "Vinyl",
         ranges: [
-          { id: "expressions", name: "Expressions", tagline: "Wood effect herringbone", pricePerM2: 28, link: "TODO",
+          { id: "expressions", name: "Expressions", tagline: "Wood and stone effect", shownAs: "Cedar Grey Herringbone", pricePerM2: 28,
+            coloursUrl: "TODO",
             textureUrl: "TODO", thumbUrl: "TODO",
             textureLocal: "textures/expressions.jpg", thumbLocal: "textures/expressions-thumb.jpg", tileSize: [0.68, 0.68] },
-          { id: "balmoral", name: "Balmoral", tagline: "Patterned", pricePerM2: 35, link: "TODO",
+          { id: "balmoral", name: "Balmoral", tagline: "Patterned", shownAs: "Pop Art", pricePerM2: 35,
+            coloursUrl: "TODO",
             textureUrl: "TODO", thumbUrl: "TODO",
             textureLocal: "textures/balmoral.jpg", thumbLocal: "textures/balmoral-thumb.jpg", tileSize: [0.332, 0.332] }
         ]
@@ -104,7 +114,8 @@
       laminate: {
         label: "Laminate",
         ranges: [
-          { id: "laminate", name: "Laminate", tagline: "TODO", pricePerM2: 35, link: "TODO",
+          { id: "laminate", name: "Laminate", tagline: "TODO", shownAs: "Atlas", pricePerM2: 35,
+            coloursUrl: "TODO",
             textureUrl: "TODO", thumbUrl: "TODO",
             textureLocal: "textures/laminate.jpg", thumbLocal: "textures/laminate-thumb.jpg", planks: [0.191, 1.9] }
         ]
@@ -140,10 +151,25 @@
     // "I know my measurements" sliders (metres).
     sizeLimits: { min: 0.8, max: 10, step: 0.1 },
 
-    // Shown after the daily price when the weekly payment is at or below max.
-    dailyComparisons: [
-      { max: 20, text: "about the same as a takeaway" },
-      { max: 35, text: "less than a weekly shop top-up" }
+    // Everyday comparisons after the daily price. Each applies when the
+    // weekly (or monthly) payment is at or below max; the first match is used
+    // and nothing is shown above the last entry. Use [] to turn one off.
+    comparisonsWeekly: [
+      { max: 15, text: "less than four coffees on the go" },
+      { max: 20, text: "about the same as a Friday night takeaway" },
+      { max: 25, text: "less than a pizza night in for the family" },
+      { max: 30, text: "less than a cinema trip for two with snacks" },
+      { max: 35, text: "less than a family trip to the cinema" },
+      { max: 40, text: "less than a family Sunday carvery" },
+      { max: 45, text: "less than a meal out for two" }
+    ],
+    comparisonsMonthly: [
+      { max: 65,  text: "less than a takeaway coffee every weekday" },
+      { max: 80,  text: "about the same as a Friday takeaway every week" },
+      { max: 100, text: "less than a family pizza night every week" },
+      { max: 125, text: "less than a cinema trip for two every week" },
+      { max: 150, text: "less than a family Sunday carvery every week" },
+      { max: 180, text: "less than a meal out for two every week" }
     ],
 
     // All wording shown to customers. {curly} words are filled in automatically.
@@ -168,10 +194,13 @@
       stairsLandingOn: "Landing included",
       stairsOnly: "Stairs are carpet only.",
       flooringHeading: "Pick your flooring",
-      productFrom: "from {price}/m²",
+      productFrom: "from {price} {per}",
       rangeHeading: "Pick your {product}",
-      perM2: "/m²",
-      seeColours: "See the full range of colours",
+      seeColours: "Explore the full range",
+      shownIn: "Shown in {colour}",
+      stageShownIn: "Shown in {colour}. More colours in the range.",
+      roomShownIn: "Shown in {colour}. Your rep brings samples of the full range.",
+      rangeCost: "{price} {per}",
       viewLarger: "View a larger swatch",
       browseCarpets: "Browse every carpet and colour",
       newTab: "(opens in a new tab)",
@@ -299,9 +328,6 @@
     });
   }
   function productLabel(pk) { const p = C.products[pk]; return p && hasText(p.label) ? p.label : pk; }
-  function cheapestRange(pk) {
-    return visibleRanges(pk).reduce(function (a, b) { return b.pricePerM2 < a.pricePerM2 ? b : a; });
-  }
   function findRange(pk, id) { return visibleRanges(pk).filter(function (r) { return r.id === id; })[0] || null; }
   function presetSizes(type) {
     const p = (C.roomPresets || {})[type] || {};
@@ -364,9 +390,10 @@
   function activeRoom() { return state.rooms[state.active]; }
 
   /* ---------- Maths ---------- */
-  function estimate() {
+  function estimate(roomsList) {
+    const rooms = roomsList || state.rooms;
     const waste = 1 + (Number(C.wastePercent) || 0) / 100;
-    const lines = state.rooms.map(function (r, i) {
+    const lines = rooms.map(function (r, i) {
       const a = roomArea(r);
       const rg = findRange(r.product, r.range);
       const price = rg ? rg.pricePerM2 : 0;
@@ -385,6 +412,39 @@
     const monthly = ceilPound(Math.max(baseWeekly * 52 / 12, Number(C.minMonthly) || 0));
     const prefit = ceilPound(Math.max(high * (Number(C.prefitPercent) || 0) / 100, deposit));
     return { lines: lines, low: low, high: high, rawHigh: rawHigh, belowMin: belowMin, deposit: deposit, weekly: weekly, monthly: monthly, prefit: prefit };
+  }
+  // Weekly or monthly payment (per the toggle) if the active room used this range,
+  // with every other room in the order unchanged.
+  function paymentWith(pk, rangeId) {
+    const rooms = state.rooms.map(function (r, i) {
+      return i === state.active ? Object.assign({}, r, { product: pk, range: rangeId }) : r;
+    });
+    const e = estimate(rooms);
+    return state.payment === "weekly" ? e.weekly : e.monthly;
+  }
+  function perText() { return state.payment === "weekly" ? T.perWeek : T.perMonth; }
+  function rangeCostText(pk, rangeId) { return fmt(T.rangeCost, { price: money(paymentWith(pk, rangeId)), per: perText() }); }
+  function productFromText(pk) {
+    const lowest = visibleRanges(pk).reduce(function (m, rg) { return Math.min(m, paymentWith(pk, rg.id)); }, Infinity);
+    return fmt(T.productFrom, { price: money(lowest), per: perText() });
+  }
+  // "That's £2.14 a day · less than four coffees on the go"
+  function dailyLine(e) {
+    const weekly = state.payment === "weekly";
+    const amount = weekly ? e.weekly : e.monthly;
+    const perDay = Math.round((weekly ? e.weekly / 7 : e.monthly * 12 / 365) * 100) / 100;
+    let comp = "";
+    ((weekly ? C.comparisonsWeekly : C.comparisonsMonthly) || []).some(function (c) {
+      if (c && amount <= c.max && hasText(c.text)) { comp = " · " + c.text; return true; }
+      return false;
+    });
+    return fmt(T.daily, { daily: money(perDay) }) + comp;
+  }
+  // Refresh every range/product figure in place (keeps focus, e.g. while sliding)
+  function updateCosts() {
+    const r = activeRoom();
+    app.querySelectorAll("[data-cost-range]").forEach(function (el) { el.textContent = rangeCostText(r.product, el.getAttribute("data-cost-range")); });
+    app.querySelectorAll("[data-cost-product]").forEach(function (el) { el.textContent = productFromText(el.getAttribute("data-cost-product")); });
   }
 
   /* ---------- Icons ---------- */
@@ -410,8 +470,10 @@
         '<div class="mdfc-stage-col">' +
           '<div class="mdfc-stage" role="img" aria-label="' + esc(T.stageAria) + '">' +
             '<div class="mdfc-stage-label" aria-hidden="true"></div>' +
-            '<div class="mdfc-stage-hint" aria-hidden="true">' + esc(T.stageHint) + "</div>" +
-            '<div class="mdfc-stage-note" aria-hidden="true" hidden></div>' +
+            '<div class="mdfc-stage-foot">' +
+              '<div class="mdfc-stage-note" hidden></div>' +
+              '<div class="mdfc-stage-hint" aria-hidden="true">' + esc(T.stageHint) + "</div>" +
+            "</div>" +
             '<div class="mdfc-stage-fallback" hidden><div class="mdfc-stage-swatch"></div><p>' + esc(T.stageFallback) + "</p></div>" +
           "</div>" +
         "</div>" +
@@ -449,6 +511,7 @@
         '<button type="button" class="mdfc-roomtab-btn" id="mdfc-tab-' + room.id + '" data-action="select-room" data-i="' + i + '" aria-pressed="' + on + '">' +
           '<span class="mdfc-roomtab-name">' + esc(fmt(T.roomTab, { n: i + 1, room: roomName(i) })) + "</span>" +
           '<span class="mdfc-roomtab-meta">' + roomMeta(line) + "</span>" +
+          (line.range && hasText(line.range.shownAs) ? '<span class="mdfc-roomtab-shown">' + esc(fmt(T.roomShownIn, { colour: line.range.shownAs })) + "</span>" : "") +
         "</button>" +
         (many ? '<button type="button" class="mdfc-roomtab-x" data-action="remove-room" data-i="' + i + '" aria-label="' +
           esc(fmt(T.removeRoom, { room: roomName(i) })) + '">' + ICON.close + "</button>" : "") +
@@ -501,7 +564,7 @@
       pks.map(function (pk) {
         return '<button type="button" class="mdfc-product" id="mdfc-prod-' + esc(pk) + '" data-action="product" data-product="' + esc(pk) + '" aria-pressed="' + (r.product === pk) + '">' +
           '<span class="mdfc-product-name">' + esc(productLabel(pk)) + "</span>" +
-          '<span class="mdfc-product-from">' + esc(fmt(T.productFrom, { price: money(cheapestRange(pk).pricePerM2) })) + "</span></button>";
+          '<span class="mdfc-product-from" data-cost-product="' + esc(pk) + '">' + esc(productFromText(pk)) + "</span></button>";
       }).join("") + "</div>" +
       (isStairs && pks.length === 1 && hasText(T.stairsOnly) ? '<p class="mdfc-help">' + esc(T.stairsOnly) + "</p>" : "");
 
@@ -511,16 +574,17 @@
       '<ul class="mdfc-ranges" role="list">' +
       visibleRanges(r.product).map(function (rg) {
         const on = r.range === rg.id;
-        const link = hasText(rg.link);
-        const big = !link && rg.link === null ? (assetUrl(rg.textureUrl, rg.textureLocal) || assetUrl(rg.thumbUrl, rg.thumbLocal)) : "";
+        const link = hasText(rg.coloursUrl);
+        const big = !link && rg.coloursUrl === null ? (assetUrl(rg.textureUrl, rg.textureLocal) || assetUrl(rg.thumbUrl, rg.thumbLocal)) : "";
         return '<li class="mdfc-card' + (on ? " is-on" : "") + (link || big ? "" : " is-solo") + '">' +
           '<button type="button" class="mdfc-range" id="mdfc-range-' + esc(rg.id) + '" data-action="range" data-range="' + esc(rg.id) + '" aria-pressed="' + on + '">' +
-            '<span class="mdfc-thumb">' + thumbHtml(rg) + "</span>" +
+            '<span class="mdfc-thumbcol"><span class="mdfc-thumb">' + thumbHtml(rg) + "</span>" +
+              (hasText(rg.shownAs) ? '<span class="mdfc-shown">' + esc(fmt(T.shownIn, { colour: rg.shownAs })) + "</span>" : "") + "</span>" +
             '<span class="mdfc-range-text"><span class="mdfc-range-name">' + esc(rg.name) + "</span>" +
             (hasText(rg.tagline) ? '<span class="mdfc-range-sub">' + esc(rg.tagline) + "</span>" : "") + "</span>" +
-            '<span class="mdfc-range-ppm">' + esc(money(rg.pricePerM2)) + esc(T.perM2) + "</span>" +
+            '<span class="mdfc-range-ppm" data-cost-range="' + esc(rg.id) + '">' + esc(rangeCostText(r.product, rg.id)) + "</span>" +
           "</button>" +
-          (link ? '<a class="mdfc-colours" href="' + esc(rg.link) + '" target="_blank" rel="noopener" data-action="range-link" data-range="' + esc(rg.id) + '">' +
+          (link ? '<a class="mdfc-colours" href="' + esc(rg.coloursUrl) + '" target="_blank" rel="noopener" data-action="range-link" data-range="' + esc(rg.id) + '">' +
             "<span>" + esc(T.seeColours) + '<span class="mdfc-visually-hidden"> ' + esc(rg.name + " " + T.newTab) + "</span></span>" + ICON.arrow + "</a>" : "") +
           (big ? '<button type="button" class="mdfc-colours" data-action="lightbox" data-src="' + esc(big) + '" data-alt="' + esc(rg.name + " swatch") + '">' +
             "<span>" + esc(T.viewLarger) + "</span>" + ICON.arrow + "</button>" : "") +
@@ -552,21 +616,15 @@
     const e = estimate();
     const weekly = state.payment === "weekly";
     const months = Math.ceil((Number(C.termWeeks) || 0) * 12 / 52 - 1e-9);
-    const daily = Math.round(e.weekly / 7 * 100) / 100;
-    let comp = "";
-    (C.dailyComparisons || []).some(function (c) {
-      if (e.weekly <= c.max && hasText(c.text)) { comp = " · " + c.text; return true; }
-      return false;
-    });
     const fin = financeItems();
     bar.classList.toggle("is-open", !!state.barOpen);
     bar.innerHTML = '<div class="mdfc-bar-in">' +
       '<div class="mdfc-pay">' +
         '<div class="mdfc-paytoggle mdfc-more" role="radiogroup" aria-label="' + esc(T.paymentLabel) + '">' + payOpt("weekly", T.weekly) + payOpt("monthly", T.monthly) + "</div>" +
         '<div class="mdfc-weekly"><span class="mdfc-big">' + esc(money(weekly ? e.weekly : e.monthly)) + '</span><span class="mdfc-per">' + esc(weekly ? T.perWeek : T.perMonth) + "</span></div>" +
-        '<div class="mdfc-daily mdfc-more">' + esc(weekly
-          ? fmt(T.overTerm, { weeks: C.termWeeks }) + " · " + fmt(T.daily, { daily: money(daily) }) + comp
-          : fmt(T.overTermMonthly, { months: months })) + "</div>" +
+        '<div class="mdfc-daily mdfc-more">' + esc((weekly
+          ? fmt(T.overTerm, { weeks: C.termWeeks })
+          : fmt(T.overTermMonthly, { months: months })) + " · " + dailyLine(e)) + "</div>" +
         '<div class="mdfc-compact-sub">' + esc(fmt(T.supplyLabel, { total: priceText(e.low, e.high) })) + "</div>" +
       "</div>" +
       '<div class="mdfc-facts mdfc-more" id="mdfc-bar-more">' +
@@ -601,6 +659,13 @@
       ? (r.stairs === "turn" ? T.stairsTurnLabel : T.stairsLabel) + (r.landing ? " " + T.stairsLandingLabel : "")
       : roomName(state.active);
     stageLabel.textContent = where + " · " + m2(roomArea(r), 1) + (rg ? " · " + rg.name : "");
+    // Caption: the photo is one example colour, not the whole range
+    let note = "";
+    if (rg && !assetUrl(rg.textureUrl, rg.textureLocal)) note = T.previewColourOnly;
+    else if (rg && hasText(rg.shownAs)) note = fmt(T.stageShownIn, { colour: rg.shownAs });
+    stageNote.textContent = note;
+    stageNote.hidden = !note;
+    stageEl.classList.toggle("has-note", !!note);
     const sw = app.querySelector(".mdfc-stage-swatch");
     if (sw && rg) {
       const src = assetUrl(rg.thumbUrl, rg.thumbLocal);
@@ -638,6 +703,7 @@
     app.querySelectorAll(".mdfc-sizebtn").forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
     const meta = app.querySelector("#mdfc-tab-" + r.id + " .mdfc-roomtab-meta");
     if (meta) meta.innerHTML = roomMeta(estimate().lines[state.active]);
+    updateCosts();
     renderBar();
     renderStageLabel();
     scene3d.update();
@@ -810,6 +876,7 @@
     if (state.payment === el.value) return;
     state.payment = el.value;
     track("payment_toggle", { payment_period: el.value });
+    updateCosts();
     renderBar();
     focusIn("mdfc-pay-" + state.payment);
     scheduleEstimateEvent();
@@ -1007,7 +1074,6 @@
           entry.tex = tex; entry.hasTexture = true;
           [base, fade].forEach(function (m) { m.map = tex; m.bumpMap = tex; m.bumpScale = look.bump; m.color.set(0xffffff); m.needsUpdate = true; });
           applyRepeat();
-          if (activeRoom() && findRange(activeRoom().product, activeRoom().range) === rg) stageNote.hidden = true;
           kick();
         } catch (e) { /* keep the plain colour */ }
       };
@@ -1079,8 +1145,6 @@
         else { fadeTo = cur.m; fadeT = 0; cur.m.fade.opacity = 0; floorFade.material = cur.m.fade; floorFade.visible = true; }
       }
       if (instant || reduce) { shown.L = r.L; shown.W = r.W; }
-      stageNote.textContent = T.previewColourOnly;
-      stageNote.hidden = cur.m.hasTexture || !!assetUrl(cur.rg.textureUrl, cur.rg.textureLocal);
       kick();
     }
 

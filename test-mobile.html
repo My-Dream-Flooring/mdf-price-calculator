@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MDF Price Calculator – hostile mobile test</title>
+  <meta name="robots" content="noindex">
+  <style>
+    /* Test page only. The calculator sits in a 320px container with 20px padding,
+       like a theme / Elementor column on a phone, and these deliberately hostile
+       rules try to leak in. Nothing should overflow or be cut off. */
+    * { box-sizing: content-box }
+    div { padding: 10px }
+    button { min-width: 200px }
+    p { margin: 1em 0 }
+    body { margin: 0; font-family: Georgia, serif; background: #fff; }
+    .test-wrap { width: 320px; max-width: 100%; padding: 20px; margin: 0 auto; background: #fafafa; outline: 1px dashed #c33; }
+    .test-wrap > p { font-size: 13px; color: #666; }
+    .demo-booking { margin-top: 48px; padding: 24px; border: 2px dashed #bbb; display: grid; gap: 12px; font-family: system-ui, sans-serif; }
+    .demo-booking input { display: block; width: 90%; padding: 8px; }
+  </style>
+</head>
+<body>
+  <div class="test-wrap">
+    <p>Hostile test: 320px container with 20px padding, plus theme rules that try to break the calculator. The red dashed line is the container edge.</p>
+    <div id="mdf-price-calculator"></div>
+    <link rel="stylesheet" href="price-calculator.css">
+    <script src="price-calculator.js" defer></script>
+
+    <section id="mdfc-booking" class="demo-booking" aria-label="Book a free home visit (demo form)">
+      <h2>Book your free home visit (demo form)</h2>
+      <label>Name <input type="text" name="name"></label>
+      <label>Postcode <input type="text" name="postcode"></label>
+    </section>
+  </div>
+</body>
+</html>

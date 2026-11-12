@@ -8,7 +8,8 @@ It's plain JavaScript and CSS with no framework and no build step. It renders st
 |---|---|
 | `price-calculator.js` | The calculator. **All prices, ranges, sizes and wording are in `MDF_CONFIG` at the top.** |
 | `price-calculator.css` | Styles. Everything is scoped under `#mdf-price-calculator`. |
-| `index.html` | Demo/test page. |
+| `index.html` | Demo page. |
+| `test-mobile.html` | Stress test: the calculator in a 320px container with 20px padding and deliberately hostile theme CSS. Nothing should overflow or be cut off. |
 | `upload-to-wordpress/` | **All 20 generated images** (floor tiles, thumbnails, Nimbus), ready to drag into the WordPress media library. They're also the fallback copies the calculator uses (see "Images"). |
 | `textures/source/` | The original product photos the floor tiles were made from. |
 | `images/source/` | The original Nimbus images. |
@@ -29,20 +30,23 @@ It's plain JavaScript and CSS with no framework and no build step. It renders st
 
 ```html
 <div id="mdf-price-calculator"></div>
-<link rel="stylesheet" href="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.css?v=6">
-<script src="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.js?v=6" defer></script>
+<link rel="stylesheet" href="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.css?v=7">
+<script src="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.js?v=7" defer></script>
 ```
 
 3. Update the page and check it on your phone.
 
 Notes:
-- **Cache:** GitHub Pages and browsers cache files for a while. After any change, bump `?v=6` to `?v=7` (and so on) in both lines so visitors get the new version straight away.
+- **Cache:** GitHub Pages and browsers cache files for a while. After any change, bump `?v=7` to `?v=8` (and so on) in both lines so visitors get the new version straight away.
 - Use **one calculator per page**. It only looks for the element with `id="mdf-price-calculator"`.
 - Everything the script adds goes inside that `<div>`, including the three.js script and, if the page hasn't already loaded it, the Montserrat font link (weight 400 only).
 - three.js loads from the same place as `price-calculator.js` (`vendor/three.min.js`). If the page already has three.js, that copy is used instead.
 - If WebGL isn't available, the preview shows a swatch with a short message and the price still works.
 - If a caching or optimisation plugin (WP Rocket, Autoptimize, etc.) delays or combines JavaScript, exclude `price-calculator.js` and `three.min.js` from that.
-- The price bar sticks to the bottom of the screen while the calculator is in view. If an Elementor section around it has **Overflow: Hidden**, the bar won't stick (it still shows, just not pinned). Set overflow back to Default on that section if you want it pinned.
+- **Price bar:** fixed to the bottom of the screen from page load, on every screen size, showing the price for the default room (medium living room, Westminster) straight away. It slides out of the way only while the booking form (the element `bookingUrl` points at, `#mdfc-booking`) is on screen. The calculator adds bottom padding equal to the bar's height so nothing in it is hidden behind the bar.
+- If an Elementor section around the calculator uses a **transform** (some entrance animations and motion effects do), the fixed bar would be pinned to that section instead of the screen. Turn off entrance animation / motion effects on that section.
+- **Phones (calculator under 600px wide):** the 0% interest strip, headline and Nimbus merge into one compact header; the 3D preview is 16:10 (max 240px tall); flooring, room and size choices each sit in one row that scrolls sideways. "Your rooms" appears once a second room is added.
+- The calculator protects itself from theme / Elementor CSS (box-sizing, padding, margins, widths, min-widths). `test-mobile.html` checks this.
 
 ---
 
@@ -165,7 +169,7 @@ Each range looks like this:
 
 - `pricePerM2` is a plain number (no £, no quote marks), in £ per m², supply only. It's used for the maths only and never shown. Customers see the range's weekly or monthly cost for their room instead.
 - `shownAs` is the colour or design in the photos (see "Example colours" above).
-- `coloursUrl` opens in a new tab as "Explore the full range". Use `null` (no quote marks) if there's no range page: the card then offers "View a larger swatch" instead, when there's an image.
+- `coloursUrl` opens in a new tab as "Explore the full range", on the card's third line next to "Shown in …". Use `null` (no quote marks) if there's no range page: the link is left off.
 - To add a range, copy a whole `{ ... },` block and change it. Every block except the last in the list needs a comma at the end.
 
 ### Turning the "Paid before fitting" line off
@@ -244,3 +248,5 @@ For the Meta pixel, create GTM tags that fire on these dataLayer events (for exa
 ## Testing locally
 
 From the repo folder, run `python3 -m http.server 8000` and open http://localhost:8000/. The demo page shows the dataLayer events underneath the calculator. It also includes some deliberately clashing "theme" styles, to show they don't leak in.
+
+Open http://localhost:8000/test-mobile.html on a phone (or a 360px-wide browser window) to check the calculator survives a narrow, hostile theme container.

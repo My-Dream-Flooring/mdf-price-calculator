@@ -667,8 +667,8 @@
           '<span class="mdfc-product-text"><span class="mdfc-product-name">' + esc(productLabel(pk)) + "</span>" +
           '<span class="mdfc-product-from" data-cost-product="' + esc(pk) + '">' + esc(productFromText(pk)) + "</span></span></button>";
       }).join("") + "</div>" +
-      (isStairs && pks.length === 1 && hasText(T.stairsOnly) ? '<p class="mdfc-help">' + esc(T.stairsOnly) + "</p>" : "") +
-      (missing.length && hasText(T.notInRoom) ? '<p class="mdfc-help">' + esc(fmt(T.notInRoom, { products: missing.map(productLabel).join(" and "), room: typeLabel(r.type).toLowerCase() })) + "</p>" : "") +
+      (isStairs && pks.length === 1 && hasText(T.stairsOnly) ? '<p class="mdfc-help mdfc-help-after">' + esc(T.stairsOnly) + "</p>" : "") +
+      (missing.length && hasText(T.notInRoom) ? '<p class="mdfc-help mdfc-help-after">' + esc(fmt(T.notInRoom, { products: missing.map(productLabel).join(" and "), room: typeLabel(r.type).toLowerCase() })) + "</p>" : "") +
       "</div>";
 
     // Which room?

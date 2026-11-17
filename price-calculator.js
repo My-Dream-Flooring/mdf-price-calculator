@@ -147,6 +147,8 @@
       },
       laminate: {
         label: "Laminate",
+        // Room types this product isn't offered for (it's hidden when one is picked)
+        notInRooms: ["Bathroom"],
         browseUrl: "https://mydreamflooring.co.uk/laminate-range/",
         browseLabel: "Browse all our laminate",
         ranges: [
@@ -236,6 +238,7 @@
       stairsLandingAdd: "Add the landing",
       stairsLandingOn: "Landing included",
       stairsOnly: "Stairs are carpet only.",
+      notInRoom: "{products} isn't available for {room}s.",
       flooringHeading: "Pick your flooring",
       productFrom: "from {price} {per}",
       rangeHeading: "Pick your {product}",
@@ -243,7 +246,7 @@
       shownIn: "Shown in {colour}",
       stageShownIn: "Shown in {colour}. More colours in the range.",
       roomShownIn: "Shown in {colour}. Your rep brings samples of the full range.",
-      rangeCost: "{price} {per}",
+      rangeCost: "From {price} {per}",
       viewLarger: "View a larger swatch",
       newTab: "(opens in a new tab)",
       closeLightbox: "Close",
@@ -381,6 +384,19 @@
       return !forStairs || ((C.stairs && C.stairs.products) || []).indexOf(k) !== -1;
     });
   }
+  // Products offered for a room type: stairs use stairs.products; other rooms
+  // leave out any product that lists the room in notInRooms.
+  function allowedProducts(type) {
+    if (type === STAIRS) return productKeys(true);
+    return productKeys().filter(function (k) {
+      const no = (C.products[k] && C.products[k].notInRooms) || [];
+      return no.indexOf(type) === -1;
+    });
+  }
+  function excludedProducts(type) {
+    if (type === STAIRS) return [];
+    return productKeys().filter(function (k) { return allowedProducts(type).indexOf(k) === -1; });
+  }
   function productLabel(pk) { const p = C.products[pk]; return p && hasText(p.label) ? p.label : pk; }
   function findRange(pk, id) { return visibleRanges(pk).filter(function (r) { return r.id === id; })[0] || null; }
   function presetSizes(type) {
@@ -409,7 +425,7 @@
     }
     const r = { id: "r" + (++uid), type: type, size: "medium", L: 4, W: 4, stairs: "straight", landing: true, product: "", range: "" };
     applyPreset(r);
-    const keys = productKeys();
+    const keys = allowedProducts(type);
     const pk = from && keys.indexOf(from.product) !== -1 ? from.product
       : (keys.indexOf(C.defaultProduct) !== -1 ? C.defaultProduct : keys[0]);
     setProduct(r, pk, from && from.product === pk ? from.range : "");
@@ -639,7 +655,8 @@
     }
 
     // Pick your flooring
-    const pks = productKeys(isStairs);
+    const pks = allowedProducts(r.type);
+    const missing = excludedProducts(r.type);
     html += '<div class="mdfc-group"><h3 class="mdfc-h" id="mdfc-prod-h">' + esc(T.flooringHeading) + "</h3>" +
       '<div class="mdfc-products mdfc-scroller" data-scroll-key="products" role="group" aria-labelledby="mdfc-prod-h">' +
       pks.map(function (pk) {
@@ -651,6 +668,7 @@
           '<span class="mdfc-product-from" data-cost-product="' + esc(pk) + '">' + esc(productFromText(pk)) + "</span></span></button>";
       }).join("") + "</div>" +
       (isStairs && pks.length === 1 && hasText(T.stairsOnly) ? '<p class="mdfc-help">' + esc(T.stairsOnly) + "</p>" : "") +
+      (missing.length && hasText(T.notInRoom) ? '<p class="mdfc-help">' + esc(fmt(T.notInRoom, { products: missing.map(productLabel).join(" and "), room: typeLabel(r.type).toLowerCase() })) + "</p>" : "") +
       "</div>";
 
     // Which room?
@@ -968,10 +986,9 @@
         const t = el.getAttribute("data-type");
         if (t === r.type) return;
         r.type = t;
-        if (t === STAIRS) {
-          const ok = productKeys(true);
-          if (ok.indexOf(r.product) === -1 && ok.length) setProduct(r, ok[0]);
-        } else {
+        const ok = allowedProducts(t);
+        if (ok.indexOf(r.product) === -1 && ok.length) setProduct(r, ok[0]);
+        if (t !== STAIRS) {
           if (r.size === "custom") r.size = "medium";
           applyPreset(r);
         }

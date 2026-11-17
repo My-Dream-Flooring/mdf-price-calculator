@@ -30,14 +30,14 @@ It's plain JavaScript and CSS with no framework and no build step. It renders st
 
 ```html
 <div id="mdf-price-calculator"></div>
-<link rel="stylesheet" href="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.css?v=8">
-<script src="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.js?v=8" defer></script>
+<link rel="stylesheet" href="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.css?v=9">
+<script src="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.js?v=9" defer></script>
 ```
 
 3. Update the page and check it on your phone.
 
 Notes:
-- **Cache:** GitHub Pages and browsers cache files for a while. After any change, bump `?v=8` to `?v=9` (and so on) in both lines so visitors get the new version straight away.
+- **Cache:** GitHub Pages and browsers cache files for a while. After any change, bump `?v=9` to `?v=10` (and so on) in both lines so visitors get the new version straight away.
 - Use **one calculator per page**. It only looks for the element with `id="mdf-price-calculator"`.
 - Everything the script adds goes inside that `<div>`, including the three.js script and, if the page hasn't already loaded it, the Montserrat font link (weight 400 only).
 - three.js loads from the same place as `price-calculator.js` (`vendor/three.min.js`). If the page already has three.js, that copy is used instead.
@@ -148,7 +148,7 @@ The easy way to edit, straight on GitHub:
 | `financeBadge` | The finance claims, e.g. `["0% interest", "No credit checks"]`. Shown as a strip at the top and as chips in the price bar. Use `[]` to hide both. |
 | `bookingUrl` | Where "Book my free home visit" goes. Currently `#mdfc-booking`: the button scrolls smoothly to the element with CSS ID `mdfc-booking` on the same page (the inline booking form) and puts the cursor in its first field. If you rename the form's CSS ID in Elementor, update this to match. A full web address (`https://…`) opens that page instead. |
 | `maxRooms` | Most rooms a customer can add. |
-| `products` | Carpet, Vinyl, Laminate and their ranges (see below). Each product also has `browseUrl` and `browseLabel`: the link under its ranges ("Browse every carpet and colour", "Browse all our vinyl flooring", "Browse all our laminate"). |
+| `products` | Carpet, Vinyl, Laminate and their ranges (see below). Each product also has `browseUrl` and `browseLabel`: the link under its ranges ("Browse every carpet and colour", "Browse all our vinyl flooring", "Browse all our laminate"). `notInRooms` lists room types a product isn't offered for (Laminate has `["Bathroom"]`): it's hidden for those rooms with a short note, and a room switched to one moves to the first allowed product. |
 | `roomPresets` | Room types and their Small / Medium / Large sizes as `[length, width]` in metres. |
 | `stairs` | Stairs option: which products are allowed (`products: ["carpet"]`), m² for a straight flight, a flight with a turn, and the landing. `enabled: false` removes it. |
 | `defaultRoom` / `defaultProduct` | What the calculator starts on. |

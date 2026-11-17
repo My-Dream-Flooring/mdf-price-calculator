@@ -288,6 +288,7 @@
 }
 #mdf-price-calculator .mdfc-h--gap { margin-top: var(--mdfc-s5); }
 #mdf-price-calculator .mdfc-help { font-size: var(--mdfc-fs-small); color: var(--mdfc-ink-soft); margin: calc(-1 * var(--mdfc-s2)) 0 var(--mdfc-s3); }
+#mdf-price-calculator .mdfc-help.mdfc-help-after { margin: var(--mdfc-s2) 0 0; }
 
 /* Shared card / button feel: press, hover lift, selected tick */
 #mdf-price-calculator .mdfc-roomtab-btn,
@@ -614,6 +615,7 @@
 #mdf-price-calculator .mdfc-app.is-narrow .mdfc-panel { gap: var(--mdfc-s4); }
 #mdf-price-calculator .mdfc-app.is-narrow .mdfc-h { margin-bottom: var(--mdfc-s2); }
 #mdf-price-calculator .mdfc-app.is-narrow .mdfc-help { margin: calc(-1 * var(--mdfc-s1)) 0 var(--mdfc-s2); }
+#mdf-price-calculator .mdfc-app.is-narrow .mdfc-help.mdfc-help-after { margin: var(--mdfc-s2) 0 0; }
 /* Choices in a single row that scrolls sideways, with a fade while there's more */
 #mdf-price-calculator .mdfc-app.is-narrow .mdfc-scroller {
   display: flex; flex-wrap: nowrap; gap: var(--mdfc-s2); overflow-x: auto; overflow-y: hidden;

@@ -30,14 +30,14 @@ It's plain JavaScript and CSS with no framework and no build step. It renders st
 
 ```html
 <div id="mdf-price-calculator"></div>
-<link rel="stylesheet" href="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.css?v=9">
-<script src="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.js?v=9" defer></script>
+<link rel="stylesheet" href="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.css?v=10">
+<script src="https://my-dream-flooring.github.io/mdf-price-calculator/price-calculator.js?v=10" defer></script>
 ```
 
 3. Update the page and check it on your phone.
 
 Notes:
-- **Cache:** GitHub Pages and browsers cache files for a while. After any change, bump `?v=9` to `?v=10` (and so on) in both lines so visitors get the new version straight away.
+- **Cache:** GitHub Pages and browsers cache files for a while. After any change, bump `?v=10` to `?v=11` (and so on) in both lines so visitors get the new version straight away.
 - Use **one calculator per page**. It only looks for the element with `id="mdf-price-calculator"`.
 - Everything the script adds goes inside that `<div>`, including the three.js script and, if the page hasn't already loaded it, the Montserrat font link (weight 400 only).
 - three.js loads from the same place as `price-calculator.js` (`vendor/three.min.js`). If the page already has three.js, that copy is used instead.
